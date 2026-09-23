@@ -33,3 +33,5 @@ build/
 .vscode/
 
 /samples/*.mp4
+
+validation_result.json

@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import streetproof.streetproof.graph.GraphService;
 import streetproof.streetproof.graph.GraphView;
 import streetproof.streetproof.ledger.PublishedRecord;
+import streetproof.streetproof.report.CityReportService;
 import streetproof.streetproof.study.FocalRequest;
 import streetproof.streetproof.study.RunRequest;
 import streetproof.streetproof.study.SampleClip;
@@ -37,10 +38,17 @@ public class StudyController {
 
     private final StudyService studies;
     private final GraphService graphs;
+    private final CityReportService reports;
 
-    public StudyController(StudyService studies, GraphService graphs) {
+    public StudyController(StudyService studies, GraphService graphs, CityReportService reports) {
         this.studies = studies;
         this.graphs = graphs;
+        this.reports = reports;
+    }
+
+    @GetMapping(value = "/studies/{id}/report", produces = MediaType.TEXT_HTML_VALUE)
+    public String report(@PathVariable String id) {
+        return reports.render(id);
     }
 
     @PostMapping(value = "/studies", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

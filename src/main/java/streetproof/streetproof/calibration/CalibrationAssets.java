@@ -2,7 +2,9 @@ package streetproof.streetproof.calibration;
 
 import streetproof.streetproof.ledger.StudyAsset;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -41,6 +43,24 @@ public final class CalibrationAssets {
         jsonLd.put("derivedFromVideoSha256", record.derivedFromVideoSha256());
         jsonLd.put("knownKmh", record.knownKmh());
         jsonLd.put("vehicleHeightMetres", record.vehicleHeightMetres());
+        jsonLd.put("combination", "median of passes");
+        jsonLd.put("passCount", record.passCount());
+        jsonLd.put("spreadPercent", record.spreadPercent());
+        List<CalibrationEvidence> passes = record.passes() == null ? List.of() : record.passes();
+        List<Map<String, Object>> passParts = new ArrayList<>();
+        for (int i = 0; i < passes.size(); i++) {
+            CalibrationEvidence pass = passes.get(i);
+            Map<String, Object> part = new LinkedHashMap<>();
+            part.put("@id", subject + ":pass:" + (i + 1));
+            part.put("videoSha256", pass.videoSha256());
+            part.put("studyAsset", pass.studyUal());
+            part.put("knownKmh", pass.knownKmh());
+            part.put("vehicleHeightMetres", pass.vehicleHeightMetres());
+            part.put("focalPx", pass.focalPx());
+            part.put("deviationPercent", pass.deviationPercent());
+            passParts.add(part);
+        }
+        jsonLd.put("hasPart", passParts);
         jsonLd.put("dateCreated", record.createdAt().toString());
 
         StringBuilder t = new StringBuilder();
@@ -53,9 +73,27 @@ public final class CalibrationAssets {
         t.append("  sp:focalPx ").append(decimal(record.focalPx())).append(" ;\n");
         t.append("  sp:frameWidth ").append(record.frameWidth()).append(" ;\n");
         t.append("  sp:frameHeight ").append(record.frameHeight()).append(" ;\n");
+        t.append("  sp:combination ").append(literal("median of passes")).append(" ;\n");
+        t.append("  sp:passCount ").append(record.passCount()).append(" ;\n");
+        if (record.spreadPercent() != null) {
+            t.append("  sp:spreadPercent ").append(decimal(record.spreadPercent())).append(" ;\n");
+        }
         t.append("  sp:derivedFromVideoSha256 ").append(literal(record.derivedFromVideoSha256())).append(" ;\n");
         t.append("  sp:knownKmh ").append(decimal(record.knownKmh())).append(" ;\n");
         t.append("  sp:vehicleHeightMetres ").append(decimal(record.vehicleHeightMetres())).append(" .\n");
+        for (int i = 0; i < passes.size(); i++) {
+            CalibrationEvidence pass = passes.get(i);
+            t.append('\n').append('<').append(subject).append(":pass:").append(i + 1).append("> a schema:Observation ;\n");
+            t.append("  sp:passOf <").append(subject).append("> ;\n");
+            t.append("  sp:videoSha256 ").append(literal(pass.videoSha256())).append(" ;\n");
+            if (pass.studyUal() != null) {
+                t.append("  sp:studyAsset ").append(literal(pass.studyUal())).append(" ;\n");
+            }
+            t.append("  sp:passKmh ").append(decimal(pass.knownKmh())).append(" ;\n");
+            t.append("  sp:passVehicleHeightMetres ").append(decimal(pass.vehicleHeightMetres())).append(" ;\n");
+            t.append("  sp:passFocalPx ").append(decimal(pass.focalPx())).append(" ;\n");
+            t.append("  sp:deviationPercent ").append(decimal(pass.deviationPercent())).append(" .\n");
+        }
         return new StudyAsset(subject, assetName(record.id()), jsonLd, t.toString());
     }
 

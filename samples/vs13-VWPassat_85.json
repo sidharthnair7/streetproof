@@ -1,0 +1,11 @@
+{
+  "title": "VW Passat B7 2010s, sedan height assumed at 85 km/h (cruise control)",
+  "credit": "VS13 dataset (Djukanovic et al., University of Montenegro), sample clip, used for validation only, not redistributed",
+  "calibrationRef": "did:dkg:context-graph:0x5Ea07Ffddc58Dd261102746E6651747E18429dbe/streetproof/_working_memory/0x5ea07ffddc58dd261102746e6651747e18429dbe/7",
+  "vehicleHeightMetres": 1.473,
+  "postedLimitKmh": 50,
+  "sampleFps": 15,
+  "knownKmh": 85,
+  "streetLabel": "VS13 test road",
+  "checkConditions": false
+}

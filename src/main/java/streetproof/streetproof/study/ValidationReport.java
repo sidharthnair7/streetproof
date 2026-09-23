@@ -10,7 +10,10 @@ public record ValidationReport(
         Double maxAbsErrorPercent,
         String calibrationClip,
         List<Row> rows,
-        String summary
+        String summary,
+        String calibrationUal,
+        List<String> calibrationClips,
+        CrossValidation crossValidation
 ) {
 
     public record Row(

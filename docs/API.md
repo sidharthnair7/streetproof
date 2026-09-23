@@ -72,9 +72,50 @@ A refused vehicle has `proven: false`, `kmh: null`, a `reason` code (`TOO_FEW_CL
 
 Node `type`: `study`, `vehicle`, `reason`, `calibration`, `gate`, `capability` (Livepeer yolo-detect), `street`, `knowledgeAsset`.
 Vehicle `group`: `proven`, `over-limit`, `refused`. Colour by group and size by `value` (km/h). Vehicle nodes carry `imageUrl`, a crop of that car, for the photo-tile look.
-Relations: `observed`, `refusedBecause`, `detectedWith`, `calibratedBy`, `judgedBy`, `studiedIn`, `publishedAs`.
+Relations: `observed`, `refusedBecause`, `detectedWith`, `calibratedBy`, `calibratedWith` (the study used a calibration stored on the DKG), `judgedBy`, `studiedIn`, `publishedAs`.
 
 This graph mirrors what goes into the Knowledge Asset, so the 3D view is literally the knowledge the DKG holds.
+
+## Calibration memory (stored on the DKG)
+
+A calibration is learned once from vehicles driving at a known speed, published to the DKG, and reused by every later study from the same camera.
+
+1. Run one or more studies of cars at a known speed (no calibration needed; every vehicle will be refused with `NO_CALIBRATION`, which is itself a good screen to show).
+2. `POST /api/calibrations`:
+
+```json
+{ "cameraLabel": "VS13 roadside camera, 3 passes",
+  "passes": [ { "studyId": "<id>", "knownKmh": 80, "vehicleHeightMetres": 1.644 },
+              { "studyId": "<id>", "knownKmh": 72, "vehicleHeightMetres": 1.645 },
+              { "studyId": "<id>", "knownKmh": 86, "vehicleHeightMetres": 1.455 } ] }
+```
+
+   One pass also works: `{ "studyId": "<id>", "knownKmh": 72, "vehicleHeightMetres": 1.645, "cameraLabel": "..." }`.
+   The focal length is the **median** of the passes, so one bad pass cannot drag it off. If any pass disagrees with the median by more than 15%, the calibration is **refused** with a 400 whose `detail` names the pass. Each pass video is published as its own Knowledge Asset and the calibration cites them.
+   Returns `{ id, cameraLabel, focalPx, frameWidth, frameHeight, spreadPercent, ual, network, passes: [ { clip, videoSha256, studyUal, knownKmh, vehicleHeightMetres, focalPx, deviationPercent } ] }`.
+3. `GET /api/calibrations` lists them. `GET /api/calibrations/resolve?ref=<ual or id>` fetches one back **from the DKG** (the focal length comes from a SPARQL query, not from local memory).
+4. Use it: `POST /api/studies/{id}/run` with `{ "calibrationRef": "<ual>", "vehicleHeightMetres": 1.5, "postedLimitKmh": 50 }`. The study's `calibrationUal` is set and its Knowledge Asset cites the calibration.
+
+## Accuracy page
+
+`GET /api/validation` compares measured speeds with known speeds (studies run with `group` `calibration` or `validation` and a `knownKmh`):
+
+```json
+{ "clips": 9, "proven": 9, "refused": 0, "meanAbsErrorPercent": 5.4, "maxAbsErrorPercent": 10.3,
+  "calibrationClips": ["vs13-CitroenC4Picasso_80.mp4", "vs13-KiaSportage_72.mp4", "vs13-Mazda3_86.mp4"],
+  "calibrationUal": "did:dkg:...", "summary": "Calibrated on ..., tested on 9 unseen clips: ...",
+  "rows": [ { "clip": "vs13-Peugeot3008_83.mp4", "role": "test", "knownKmh": 83, "measuredKmh": 81.9,
+              "errorPercent": -1.3, "proven": true, "refusal": null } ],
+  "crossValidation": { "method": "...",
+    "levels": [ { "passes": 1, "combinations": 12, "meanAbsErrorPercent": 5.6, "worstCombinationMeanPercent": 11.2, "worstClipErrorPercent": 17.0 } ],
+    "singleClipChoices": [ { "clip": "vs13-CitroenC4Picasso_80.mp4", "meanAbsErrorPercent": 4.0, "worstAbsErrorPercent": 9.1 } ] } }
+```
+
+(Numbers above are illustrative of the shape; read the real ones from the endpoint.) Show the rows as a table (known vs measured, error), `levels` as "1 pass / 2 passes / 3 passes" bars, and `singleClipChoices` to show that one bad calibration clip is exactly why multi-pass exists.
+
+## City report
+
+`GET /api/studies/{id}/report` returns a finished, printable **HTML page** for a resident to hand to the city: headline finding, 85th percentile vs limit, histogram with the limit line, refusals and why, method, how to verify it on the DKG, and limits. Open it in a new tab or an iframe; it needs no styling from the frontend.
 
 ## Other
 

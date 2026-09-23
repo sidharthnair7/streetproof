@@ -172,7 +172,8 @@ public class StudyService {
 
     public ValidationReport validation() {
         List<ValidationReport.Row> rows = new ArrayList<>();
-        String calibrationClip = null;
+        List<String> calibrationClips = new ArrayList<>();
+        java.util.Set<String> calibrationUals = new java.util.HashSet<>();
         for (Study study : repository.all()) {
             boolean calibration = "calibration".equals(study.group());
             if (study.status() != StudyStatus.DONE || study.knownKmh() == null
@@ -181,8 +182,9 @@ public class StudyService {
             }
             String clip = study.view().sourceName();
             if (calibration) {
-                calibrationClip = clip;
+                calibrationClips.add(clip);
             }
+            calibrationUals.add(String.valueOf(study.calibrationUal()));
             java.util.Optional<streetproof.streetproof.gate.Verdict> best = study.verdicts().stream()
                     .max(java.util.Comparator.comparingInt(v -> v.estimate().cleanFrames()));
             if (best.isEmpty()) {
@@ -204,11 +206,21 @@ public class StudyService {
         Double mean = errors.isEmpty() ? null : Math.round(errors.stream().mapToDouble(Double::doubleValue).average().orElse(0) * 10) / 10.0;
         Double max = errors.isEmpty() ? null : errors.stream().max(Double::compare).orElse(null);
         int refused = (int) tests.stream().filter(r -> !r.proven()).count();
+        java.util.Collections.sort(calibrationClips);
+        String calibrationClip = calibrationClips.isEmpty() ? null : String.join(", ", calibrationClips);
         String summary = errors.isEmpty()
                 ? "No test clip produced a proven speed yet."
                 : String.format(Locale.ROOT, "Calibrated on %s, tested on %d unseen clips: %d proven with a mean error of %.1f%% (worst %.1f%%), %d refused.",
                 calibrationClip == null ? "one clip" : calibrationClip, tests.size(), errors.size(), mean, max, refused);
-        return new ValidationReport(tests.size(), errors.size(), refused, mean, max, calibrationClip, rows, summary);
+        String calibrationUal = calibrationUals.size() == 1 ? calibrationUals.iterator().next() : null;
+        CrossValidation cross = null;
+        List<ValidationReport.Row> measured = rows.stream().filter(ValidationReport.Row::proven).toList();
+        if (calibrationUal != null && !"null".equals(calibrationUal) && measured.size() >= 3) {
+            cross = CrossValidator.compute(measured.stream().map(ValidationReport.Row::clip).toList(),
+                    measured.stream().map(r -> r.measuredKmh() / r.knownKmh()).toList(), 3);
+        }
+        return new ValidationReport(tests.size(), errors.size(), refused, mean, max, calibrationClip, rows, summary,
+                "null".equals(calibrationUal) ? null : calibrationUal, calibrationClips, cross);
     }
 
     public List<Map<String, Object>> history(String id) {
