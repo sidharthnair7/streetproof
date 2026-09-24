@@ -61,13 +61,13 @@ export function ResultsScreen({ studyId, onVerify, onField, onBack }: ResultsScr
 
   if (!studyId) {
     return (
-      <div className="panel mx-auto max-w-[600px] rounded-2xl p-8 text-center text-[13px] text-[#627574]">
+      <div className="panel mx-auto max-w-[600px] rounded-2xl p-8 text-center text-[13px] text-[#536363]">
         Pick a study from the <button onClick={onBack} className="font-semibold text-[#126b6a]">workspace</button> to see its results.
       </div>
     )
   }
   if (!study) {
-    return <div className="grid min-h-[300px] place-items-center text-[#627574]">{error ?? <Loader2 className="animate-spin" />}</div>
+    return <div className="grid min-h-[300px] place-items-center text-[#536363]">{error ?? <Loader2 className="animate-spin" />}</div>
   }
 
   const s = study.summary
@@ -85,11 +85,11 @@ export function ResultsScreen({ studyId, onVerify, onField, onBack }: ResultsScr
           </h2>
           <div className="mt-3 flex flex-wrap items-center gap-3">
             {study.published ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#d9f3e9] px-2.5 py-1 text-[10px] font-semibold text-[#287463]"><Check size={11} /> Published to the DKG</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#d9f3e9] px-2.5 py-1 text-[12px] font-semibold text-[#287463]"><Check size={11} /> Published to the DKG</span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e7eef9] px-2.5 py-1 text-[10px] font-semibold text-[#3e67a6]">Measured, not published</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e7eef9] px-2.5 py-1 text-[12px] font-semibold text-[#3e67a6]">Measured, not published</span>
             )}
-            <span className="text-[12px] text-[#6d807e]">
+            <span className="text-[13px] text-[#556462]">
               {clipName(study.sourceName)} · {study.video ? `${study.video.durationSeconds.toFixed(1)} s clip · ${study.video.sourceFps.toFixed(2)} fps` : ''} · sampled at {study.sampleFps} fps · limit {study.postedLimitKmh} km/h
             </span>
           </div>
@@ -103,28 +103,28 @@ export function ResultsScreen({ studyId, onVerify, onField, onBack }: ResultsScr
         </div>
       </div>
 
-      {error && <div className="rounded-xl border border-[#f1c8bd] bg-[#fdf1ee] px-4 py-3 text-[12px] text-[#9b3d2a]">{error}</div>}
+      {error && <div className="rounded-xl border border-[#f1c8bd] bg-[#fdf1ee] px-4 py-3 text-[13px] text-[#9b3d2a]">{error}</div>}
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <BentoCard glowColor="rgba(59, 185, 163, 0.3)">
           <div className="eyebrow mb-1">Vehicles observed</div>
           <div className="stat-number text-3xl font-medium text-[#18232a]"><AnimatedCounter value={s?.vehiclesObserved ?? 0} /></div>
-          <div className="mt-1 text-[11px] text-[#718584]">Tracks built from Livepeer boxes</div>
+          <div className="mt-1 text-[12.5px] text-[#556463]">Tracks built from Livepeer boxes</div>
         </BentoCard>
         <BentoCard glowColor="rgba(53, 102, 174, 0.3)">
           <div className="eyebrow mb-1 text-[#2d5c94]">Proven speeds</div>
           <div className="stat-number text-3xl font-medium text-[#2d5c94]"><AnimatedCounter value={s?.vehiclesProven ?? 0} /></div>
-          <div className="mt-1 text-[11px] text-[#718584]">{s?.vehiclesRefused ?? 0} refused, each with a reason</div>
+          <div className="mt-1 text-[12.5px] text-[#556463]">{s?.vehiclesRefused ?? 0} refused, each with a reason</div>
         </BentoCard>
         <BentoCard glowColor="rgba(236, 138, 69, 0.3)">
-          <div className="eyebrow mb-1 text-[#bd6a2c]">85th percentile</div>
-          <div className="stat-number text-3xl font-medium text-[#bd6a2c]">{s?.v85Kmh != null ? <AnimatedCounter value={s.v85Kmh} decimals={1} suffix=" km/h" /> : '–'}</div>
-          <div className="mt-1 text-[11px] text-[#718584]">The number traffic engineers use</div>
+          <div className="eyebrow mb-1 text-[#a45c26]">85th percentile</div>
+          <div className="stat-number text-3xl font-medium text-[#a45c26]">{s?.v85Kmh != null ? <AnimatedCounter value={s.v85Kmh} decimals={1} suffix=" km/h" /> : '–'}</div>
+          <div className="mt-1 text-[12.5px] text-[#556463]">The number traffic engineers use</div>
         </BentoCard>
         <BentoCard glowColor="rgba(236, 80, 80, 0.25)">
-          <div className="eyebrow mb-1 text-[#c45334]">Over {study.postedLimitKmh} km/h</div>
-          <div className="stat-number text-3xl font-medium text-[#c45334]">{s?.shareOverLimit != null ? <AnimatedCounter value={Math.round(s.shareOverLimit * 100)} suffix="%" /> : '–'}</div>
-          <div className="mt-1 text-[11px] text-[#718584]">Of the proven vehicles</div>
+          <div className="eyebrow mb-1 text-[#b84e31]">Over {study.postedLimitKmh} km/h</div>
+          <div className="stat-number text-3xl font-medium text-[#b84e31]">{s?.shareOverLimit != null ? <AnimatedCounter value={Math.round(s.shareOverLimit * 100)} suffix="%" /> : '–'}</div>
+          <div className="mt-1 text-[12.5px] text-[#556463]">Of the proven vehicles</div>
         </BentoCard>
       </section>
 
@@ -134,7 +134,7 @@ export function ResultsScreen({ studyId, onVerify, onField, onBack }: ResultsScr
             <div className="max-w-[520px]">
               <div className="eyebrow mb-1">Check before you ask the city</div>
               <div className="text-[13px] font-semibold text-[#18232a]">Toronto's traffic calming warrant, as an example</div>
-              <p className="mt-1 text-[11.5px] leading-relaxed text-[#6d807e]">
+              <p className="mt-1 text-[13px] leading-relaxed text-[#556462]">
                 Speed humps are warranted when the 85th percentile is over 38 km/h or the 95th over 45 km/h on a local road (30 km/h warrant speed, block of 120 m or more). A request found not warranted locks the street out of new data collection for three years.
               </p>
             </div>
@@ -146,13 +146,13 @@ export function ResultsScreen({ studyId, onVerify, onField, onBack }: ResultsScr
                 <div key={label as string} className={`rounded-xl border px-4 py-3 ${value != null && (value as number) > (bar as number) ? 'border-[#f1c8bd] bg-[#fdf1ee]' : 'border-[#dce5e3] bg-white'}`}>
                   <div className="eyebrow mb-1">{label as string}</div>
                   <div className="stat-number text-xl text-[#18232a]">{value != null ? `${(value as number).toFixed(1)}` : '–'}</div>
-                  <div className="text-[10.5px] text-[#6d807e]">{value != null && (value as number) > (bar as number) ? `over ${bar}: meets it` : `needs over ${bar}`}</div>
+                  <div className="text-[12px] text-[#556462]">{value != null && (value as number) > (bar as number) ? `over ${bar}: meets it` : `needs over ${bar}`}</div>
                 </div>
               ))}
               <div className={`rounded-xl border px-4 py-3 ${s.vehiclesProven >= 50 ? 'border-[#cfe6df] bg-[#effaf5]' : 'border-[#e3d9c5] bg-[#fbf6ec]'}`}>
                 <div className="eyebrow mb-1">Sample</div>
                 <div className="stat-number text-xl text-[#18232a]">{s.vehiclesProven}</div>
-                <div className="text-[10.5px] text-[#6d807e]">{s.vehiclesProven >= 50 ? 'enough for a spot study' : 'studies use 50 or more'}</div>
+                <div className="text-[12px] text-[#556462]">{s.vehiclesProven >= 50 ? 'enough for a spot study' : 'studies use 50 or more'}</div>
               </div>
             </div>
           </div>
@@ -170,12 +170,12 @@ export function ResultsScreen({ studyId, onVerify, onField, onBack }: ResultsScr
           {study.links.video ? (
             <video key={study.links.video} src={study.links.video} className="block w-full bg-black" controls autoPlay muted loop playsInline />
           ) : (
-            <div className="grid aspect-video place-items-center bg-[#0f1c20] text-[12px] text-[#7f9c98]">The annotated video appears when the run is done.</div>
+            <div className="grid aspect-video place-items-center bg-[#0f1c20] text-[13px] text-[#7f9c98]">The annotated video appears when the run is done.</div>
           )}
           {analysis && (
-            <div className="border-t border-[#e5ebea] px-5 py-4 text-[12px] text-[#40585a]">{analysis.headline}</div>
+            <div className="border-t border-[#e5ebea] px-5 py-4 text-[13px] text-[#40585a]">{analysis.headline}</div>
           )}
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-3 border-t border-[#e5ebea] px-5 py-4 text-[11.5px] md:grid-cols-3">
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-3 border-t border-[#e5ebea] px-5 py-4 text-[13px] md:grid-cols-3">
             <div>
               <dt className="eyebrow mb-1">Livepeer</dt>
               <dd className="text-[#18232a]">{study.progress.framesTotal} frames through yolo-detect{study.usedCachedDetections ? ' (cached on re-run)' : ''}</dd>
@@ -189,7 +189,7 @@ export function ResultsScreen({ studyId, onVerify, onField, onBack }: ResultsScr
             </div>
             <div>
               <dt className="eyebrow mb-1">Video fingerprint</dt>
-              <dd className="mono break-all text-[10.5px] text-[#18232a]" title={study.videoSha256}>{short(study.videoSha256, 14, 10)}</dd>
+              <dd className="mono break-all text-[12px] text-[#18232a]" title={study.videoSha256}>{short(study.videoSha256, 14, 10)}</dd>
             </div>
             {study.conditionsNote && (
               <div className="col-span-2 md:col-span-3">
@@ -212,13 +212,13 @@ export function ResultsScreen({ studyId, onVerify, onField, onBack }: ResultsScr
             {ledger.map((g) => (
               <div key={g.code} className="rounded-xl border border-[#e3eae8] bg-white px-3.5 py-2.5">
                 <div className="flex items-center justify-between gap-3">
-                  <div className="text-[12px] font-semibold text-[#18232a]">{g.title}</div>
-                  <div className="mono text-[10px]">
+                  <div className="text-[13px] font-semibold text-[#18232a]">{g.title}</div>
+                  <div className="mono text-[12px]">
                     <span className="text-[#257968]">{g.passed} pass</span>
-                    {g.refused > 0 && <span className="ml-2 text-[#c45334]">{g.refused} refused</span>}
+                    {g.refused > 0 && <span className="ml-2 text-[#b84e31]">{g.refused} refused</span>}
                   </div>
                 </div>
-                <div className="mt-0.5 text-[10.5px] text-[#728685]">{g.rule}</div>
+                <div className="mt-0.5 text-[12px] text-[#556464]">{g.rule}</div>
                 <div className="mt-2 h-1 overflow-hidden rounded-full bg-[#eef3f2]">
                   <div className="h-full bg-[#3bb9a3]" style={{ width: `${g.tested ? (g.passed / g.tested) * 100 : 0}%` }} />
                 </div>
@@ -236,8 +236,8 @@ export function ResultsScreen({ studyId, onVerify, onField, onBack }: ResultsScr
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[820px] text-left text-[12px]">
-            <thead className="bg-[#f8faf9] text-[#7e8f8e]">
+          <table className="w-full min-w-[820px] text-left text-[13px]">
+            <thead className="bg-[#f8faf9] text-[#576362]">
               <tr>
                 <th className="px-5 py-3 font-medium">Vehicle</th>
                 <th className="px-4 py-3 font-medium">Verdict</th>
@@ -257,26 +257,26 @@ export function ResultsScreen({ studyId, onVerify, onField, onBack }: ResultsScr
                       <img src={v.thumbnailUrl} alt="" className="h-10 w-14 rounded-md bg-[#eef3f2] object-cover" />
                       <div>
                         <div className="font-semibold text-[#18232a]">#{v.trackId} {v.label}</div>
-                        <div className="text-[10px] text-[#869998]">{v.firstSeenSeconds.toFixed(1)}–{v.lastSeenSeconds.toFixed(1)} s</div>
+                        <div className="text-[12px] text-[#576363]">{v.firstSeenSeconds.toFixed(1)}–{v.lastSeenSeconds.toFixed(1)} s</div>
                       </div>
                     </div>
                   </td>
                   <td className="px-4 py-3">
                     {v.proven ? (
-                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${v.overLimit ? 'bg-[#fff0df] text-[#ce7b35]' : 'bg-[#d9f3e9] text-[#287463]'}`}><Check size={10} /> {v.overLimit ? 'Over limit' : 'Proven'}</span>
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-semibold ${v.overLimit ? 'bg-[#fff0df] text-[#9f5f29]' : 'bg-[#d9f3e9] text-[#287463]'}`}><Check size={10} /> {v.overLimit ? 'Over limit' : 'Proven'}</span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-[#fbe4df] px-2 py-0.5 text-[10px] font-semibold text-[#b1462f]"><X size={10} /> Refused</span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-[#fbe4df] px-2 py-0.5 text-[12px] font-semibold text-[#b1462f]"><X size={10} /> Refused</span>
                     )}
                   </td>
                   <td className="px-4 py-3 font-semibold text-[#18232a]">{v.kmh != null ? `${v.kmh.toFixed(1)} km/h` : '–'}</td>
-                  <td className="px-4 py-3 text-[#667a78]">{v.cleanFrames} / {v.totalFrames}</td>
-                  <td className="px-4 py-3 mono text-[#667a78]">{Number.isFinite(v.rSquared) ? v.rSquared.toFixed(3) : '–'}</td>
-                  <td className="px-4 py-3 mono text-[#667a78]">{v.medianConfidence.toFixed(2)}</td>
-                  <td className="px-4 py-3 text-[#667a78]">{v.knownKmh != null ? `${v.knownKmh} km/h${v.errorPercent != null ? ` (${v.errorPercent > 0 ? '+' : ''}${v.errorPercent}%)` : ''}` : '–'}</td>
+                  <td className="px-4 py-3 text-[#546462]">{v.cleanFrames} / {v.totalFrames}</td>
+                  <td className="px-4 py-3 mono text-[#546462]">{Number.isFinite(v.rSquared) ? v.rSquared.toFixed(3) : '–'}</td>
+                  <td className="px-4 py-3 mono text-[#546462]">{v.medianConfidence.toFixed(2)}</td>
+                  <td className="px-4 py-3 text-[#546462]">{v.knownKmh != null ? `${v.knownKmh} km/h${v.errorPercent != null ? ` (${v.errorPercent > 0 ? '+' : ''}${v.errorPercent}%)` : ''}` : '–'}</td>
                   <td className="px-4 py-3 text-[#8a5a2b]">{v.proven ? '' : `${v.reasonMeaning ?? v.reason}${v.detail ? `: ${v.detail}` : ''}`}</td>
                 </tr>
               ))}
-              {vehicles.length === 0 && <tr><td colSpan={8} className="px-6 py-6 text-center text-[#6d7e7d]">No vehicles tracked.</td></tr>}
+              {vehicles.length === 0 && <tr><td colSpan={8} className="px-6 py-6 text-center text-[#556261]">No vehicles tracked.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -289,9 +289,9 @@ export function ResultsScreen({ studyId, onVerify, onField, onBack }: ResultsScr
           <div className="flex h-40 items-end justify-center gap-1.5">
             {analysis.histogram.map((b) => (
               <div key={b.fromKmh} className="flex max-w-[64px] flex-1 flex-col items-center gap-1">
-                <div className="mono text-[10px] text-[#667a78]">{b.count || ''}</div>
+                <div className="mono text-[12px] text-[#546462]">{b.count || ''}</div>
                 <div className={`w-full rounded-t-md ${b.fromKmh >= study.postedLimitKmh ? 'bg-[#e08a4c]' : 'bg-[#3bb9a3]'}`} style={{ height: `${(b.count / maxCount) * 110}px` }} />
-                <div className="mono text-[10px] text-[#869998]">{b.fromKmh}</div>
+                <div className="mono text-[12px] text-[#576363]">{b.fromKmh}</div>
               </div>
             ))}
           </div>
@@ -306,13 +306,13 @@ export function ResultsScreen({ studyId, onVerify, onField, onBack }: ResultsScr
               <div className="min-w-0">
                 <div className="mb-1 flex flex-wrap items-center gap-2">
                   <span className="eyebrow text-[#25776b]">OriginTrail Decentralized Knowledge Graph</span>
-                  {study.published && <span className="rounded-full bg-[#3bb9a3]/15 px-2 py-0.5 mono text-[8px] font-bold text-[#1a6e60]">{study.published.network}</span>}
+                  {study.published && <span className="rounded-full bg-[#3bb9a3]/15 px-2 py-0.5 mono text-[11px] font-bold text-[#1a6e60]">{study.published.network}</span>}
                 </div>
                 <h3 className="text-[16px] font-semibold text-[#18232a]">{study.published ? 'Published Knowledge Asset' : 'Publish this study'}</h3>
-                <p className="mt-1.5 max-w-[640px] text-[12px] leading-relaxed text-[#59716e]">
+                <p className="mt-1.5 max-w-[640px] text-[13px] leading-relaxed text-[#4f6562]">
                   The asset holds the video's SHA-256 fingerprint, the method and thresholds, every vehicle's result and refusal reason, the Livepeer capability used{study.calibrationUal ? ', and a link to the calibration asset it was measured with' : ''}. The video itself is not published.
                 </p>
-                <div className="mt-3 flex flex-wrap items-center gap-2 mono text-[10px] text-[#4d6b67]">
+                <div className="mt-3 flex flex-wrap items-center gap-2 mono text-[12px] text-[#496662]">
                   {study.published && (
                     <span className="flex items-center gap-1 rounded border border-[#d6e5e1] bg-white px-2 py-1" title={study.published.ual}><KeyRound size={11} /> {short(study.published.ual, 30, 12)}</span>
                   )}

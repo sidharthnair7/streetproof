@@ -36,14 +36,14 @@ export function FieldScreen({ onExit, onOpenStudy }: Props) {
   const [error, setError] = useState<string | null>(null)
   const params = useMemo(() => new URLSearchParams(window.location.search), [])
   const [layout, setLayout] = useState<LayoutId>(() => (LAYOUTS.some((l) => l.id === params.get('layout')) ? (params.get('layout') as LayoutId) : 'sequential'))
-  const [colour, setColour] = useState<ColourId>(() => (['none', 'verdict', 'confidence'].includes(params.get('colour') ?? '') ? (params.get('colour') as ColourId) : 'none'))
+  const [colour, setColour] = useState<ColourId>(() => (['none', 'verdict', 'confidence'].includes(params.get('colour') ?? '') ? (params.get('colour') as ColourId) : 'verdict'))
   const [search, setSearch] = useState('')
   const [filters, setFilters] = useState<Record<FacetId, string[]>>({ clip: [], verdict: [], reason: [], calibration: [] })
   const [open, setOpen] = useState<FacetId | null>(null)
   const [selected, setSelected] = useState<number | null>(null)
   const [hover, setHover] = useState<{ index: number; x: number; y: number } | null>(null)
   const [aspect, setAspect] = useState(1.6)
-  const [touring, setTouring] = useState(() => params.get('tour') === '1')
+  const [touring, setTouring] = useState(() => params.get('tour') === '1' || (!params.has('layout') && params.get('tour') !== '0'))
 
   const meta = useMemo(() => (field ? describe(field) : []), [field])
 
@@ -65,9 +65,14 @@ export function FieldScreen({ onExit, onOpenStudy }: Props) {
     engineRef.current = engine
     const measure = () => setAspect(container.clientWidth / Math.max(1, container.clientHeight))
     measure()
+    const takeOver = () => setTouring(false)
     window.addEventListener('resize', measure)
+    container.addEventListener('pointerdown', takeOver)
+    container.addEventListener('wheel', takeOver, { passive: true })
     return () => {
       window.removeEventListener('resize', measure)
+      container.removeEventListener('pointerdown', takeOver)
+      container.removeEventListener('wheel', takeOver)
       engine.dispose()
       engineRef.current = null
     }
@@ -188,6 +193,12 @@ export function FieldScreen({ onExit, onOpenStudy }: Props) {
   const vehiclesShown = useMemo(() => new Set(visible.map((i) => meta[i].vehicleKey)).size, [visible, meta])
   const detail = selected !== null && field ? buildDetail(field, meta, selected) : null
   const hoverInfo = hover && field && meta[hover.index] ? meta[hover.index] : null
+  const currentLayout = LAYOUTS.find((l) => l.id === layout)
+  const legend = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const i of visible) counts.set(meta[i].group, (counts.get(meta[i].group) ?? 0) + 1)
+    return Object.keys(VERDICT_COLOURS).filter((g) => counts.get(g)).map((g) => ({ group: g, count: counts.get(g) ?? 0 }))
+  }, [visible, meta])
 
   return (
     <div className="field-shell">
@@ -208,6 +219,7 @@ export function FieldScreen({ onExit, onOpenStudy }: Props) {
             onClick={() => chooseLayout(l.id)}
           >
             {l.label}
+            <kbd className="field-key">{i + 1}</kbd>
           </button>
         ))}
         <div className="field-section">Filter</div>
@@ -271,18 +283,41 @@ export function FieldScreen({ onExit, onOpenStudy }: Props) {
 
       <div className="field-stage">
         <div ref={containerRef} className="field-canvas" />
+        {field && field.detections > 0 && (
+          <div className="field-title">
+            <h2>Every Livepeer detection</h2>
+            <p>
+              {field.detections.toLocaleString()} yolo-detect boxes from {field.studies.length} studies. Each disc is one car in one frame.
+            </p>
+            {currentLayout && (
+              <div className="field-now">
+                {currentLayout.label} <span>· {currentLayout.hint}</span>
+              </div>
+            )}
+          </div>
+        )}
         <div className="field-corner">
+          {touring && <span className="field-touring">Touring the layouts · click anywhere to explore</span>}
           <button className={`field-reset ${touring ? 'is-on' : ''}`} onClick={() => setTouring((t) => !t)}>
-            {touring ? 'Stop' : 'Start'}
-            <br />
-            tour
+            {touring ? 'Stop tour' : 'Start tour'}
           </button>
           <button className="field-reset" onClick={() => engineRef.current?.resetCamera()}>
-            Reset
-            <br />
-            camera
+            Reset camera
           </button>
         </div>
+        {colour === 'verdict' && legend.length > 0 && (
+          <div className="field-legend">
+            {legend.map((l) => (
+              <span key={l.group}>
+                <i style={{ background: VERDICT_COLOURS[l.group] }} />
+                {GROUP_LABEL[l.group]} <em>{l.count.toLocaleString()}</em>
+              </span>
+            ))}
+          </div>
+        )}
+        {!detail && (
+          <div className="field-hint">Drag to rotate · Scroll to zoom · Click a disc to see the car · Keys 1–8 change the layout</div>
+        )}
         {field && field.detections === 0 && (
           <div className="field-empty">
             No finished studies yet. Run a sample clip first, then come back.

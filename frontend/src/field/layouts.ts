@@ -85,10 +85,10 @@ function frontView(extent: Extent, aspect: number, fill = 1.08): CameraView {
   const w = Math.max(4, extent.maxX - extent.minX)
   const h = Math.max(4, extent.maxY - extent.minY)
   const half = Math.tan((75 / 2) * (Math.PI / 180))
-  const distance = (Math.max(h / 2, w / 2 / Math.max(aspect, 0.3)) / half) * fill
+  const distance = Math.max(8, (Math.max(h / 2, w / 2 / Math.max(aspect, 0.3)) / half) * fill * 1.28)
   const cx = (extent.minX + extent.maxX) / 2
-  const cy = (extent.minY + extent.maxY) / 2
-  return { position: [cx, cy, Math.max(8, distance)], target: [cx, cy, 0] }
+  const cy = (extent.minY + extent.maxY) / 2 + distance * half * 0.1
+  return { position: [cx, cy, distance], target: [cx, cy, 0] }
 }
 
 function tiltedView(extent: Extent, aspect: number): CameraView {
@@ -244,7 +244,7 @@ export function computeLayout(
     const rows = Math.ceil(ordered.length / cols)
     placeGrid(ordered, positions, -((cols - 1) * SPACING) / 2, ((rows - 1) * SPACING) / 2, cols)
     const extent = { minX: -(cols * SPACING) / 2, maxX: (cols * SPACING) / 2, minY: -(rows * SPACING) / 2, maxY: (rows * SPACING) / 2 }
-    return { positions, labels: [], view: frontView(extent, aspect, 0.62) }
+    return { positions, labels: [], view: frontView(extent, aspect, 0.95) }
   }
 
   if (layout === 'clip' || layout === 'vehicle' || layout === 'verdict' || layout === 'reason') {

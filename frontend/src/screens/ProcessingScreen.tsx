@@ -71,7 +71,7 @@ export function ProcessingScreen({ studyId, onDone, onBack }: ProcessingScreenPr
 
   if (!studyId) {
     return (
-      <div className="panel mx-auto max-w-[600px] rounded-2xl p-8 text-center text-[13px] text-[#627574]">
+      <div className="panel mx-auto max-w-[600px] rounded-2xl p-8 text-center text-[13px] text-[#536363]">
         No study is running. <button onClick={onBack} className="font-semibold text-[#126b6a]">Start one</button>.
       </div>
     )
@@ -92,12 +92,12 @@ export function ProcessingScreen({ studyId, onDone, onBack }: ProcessingScreenPr
           </h2>
         </div>
         {study?.status === 'DONE' && (
-          <div className="flex items-center gap-2 rounded-xl bg-[#d9f3e9] px-4 py-2 text-[12px] font-bold text-[#1f7365] shadow-sm">
+          <div className="flex items-center gap-2 rounded-xl bg-[#d9f3e9] px-4 py-2 text-[13px] font-bold text-[#1f7365] shadow-sm">
             <CheckCircle2 size={16} /> Measured
           </div>
         )}
         {study?.status === 'FAILED' && (
-          <div className="flex items-center gap-2 rounded-xl bg-[#fbe4df] px-4 py-2 text-[12px] font-bold text-[#b1462f] shadow-sm">
+          <div className="flex items-center gap-2 rounded-xl bg-[#fbe4df] px-4 py-2 text-[13px] font-bold text-[#b1462f] shadow-sm">
             <XCircle size={16} /> Failed
           </div>
         )}
@@ -112,13 +112,13 @@ export function ProcessingScreen({ studyId, onDone, onBack }: ProcessingScreenPr
             return (
               <div key={stage.status} className={`rounded-xl border p-4 transition-colors ${state === 'active' ? 'border-[#1b7a74] bg-[#effaf5]' : state === 'done' ? 'border-[#cfe6df] bg-white' : 'border-[#e3eae8] bg-white/60'}`}>
                 <div className="mb-3 flex items-center justify-between">
-                  <span className={`grid h-8 w-8 place-items-center rounded-lg ${state === 'idle' ? 'bg-[#eef3f2] text-[#9cb0ae]' : 'bg-[#dff3eb] text-[#1b7a74]'}`}>
+                  <span className={`grid h-8 w-8 place-items-center rounded-lg ${state === 'idle' ? 'bg-[#eef3f2] text-[#576361]' : 'bg-[#dff3eb] text-[#1b7a74]'}`}>
                     {state === 'active' ? <Loader2 size={15} className="animate-spin" /> : state === 'done' ? <CheckCircle2 size={15} /> : <Icon size={15} />}
                   </span>
-                  <span className="mono text-[9px] uppercase tracking-wider text-[#8a9a99]">{stage.status.toLowerCase()}</span>
+                  <span className="mono text-[11px] uppercase tracking-wider text-[#586362]">{stage.status.toLowerCase()}</span>
                 </div>
-                <div className="text-[12px] font-semibold text-[#18232a]">{stage.label}</div>
-                <div className="mt-1 text-[11px] leading-snug text-[#728685]">{stage.detail}</div>
+                <div className="text-[13px] font-semibold text-[#18232a]">{stage.label}</div>
+                <div className="mt-1 text-[12.5px] leading-snug text-[#556464]">{stage.detail}</div>
               </div>
             )
           })}
@@ -135,21 +135,21 @@ export function ProcessingScreen({ studyId, onDone, onBack }: ProcessingScreenPr
           <div className="rounded-xl bg-[#f6faf8] p-4">
             <div className="eyebrow mb-2">Livepeer calls</div>
             <div className="stat-number text-2xl text-[#18232a]">{study?.livepeerCalls ?? 0}</div>
-            <div className="mt-2 text-[11px] text-[#728685]">{study?.usedCachedDetections ? 'Detections reused from an earlier run of this exact video' : 'upload + run_capability per frame'}</div>
+            <div className="mt-2 text-[12.5px] text-[#556464]">{study?.usedCachedDetections ? 'Detections reused from an earlier run of this exact video' : 'upload + run_capability per frame'}</div>
           </div>
           <div className="rounded-xl bg-[#f6faf8] p-4">
             <div className="eyebrow mb-2">Calibration</div>
             <div className="text-[13px] font-semibold text-[#18232a]">
               {study?.calibrationUal ? 'Loaded from the DKG' : study?.calibration ? study.calibration.mode.toLowerCase().replace('_', ' ') : 'None'}
             </div>
-            <div className="mono mt-2 break-all text-[10px] text-[#728685]">{study?.calibrationUal ? short(study.calibrationUal, 22, 10) : study ? `sha256 ${short(study.videoSha256, 12, 8)}` : ''}</div>
+            <div className="mono mt-2 break-all text-[12px] text-[#556464]">{study?.calibrationUal ? short(study.calibrationUal, 22, 10) : study ? `sha256 ${short(study.videoSha256, 12, 8)}` : ''}</div>
           </div>
         </div>
       </div>
 
       <div className="rounded-2xl bg-[#11222a] p-5 text-[#b5c9c7] shadow-xl">
         <div className="mb-3 flex items-center gap-2 eyebrow text-[#7fb3a9]"><CloudUpload size={12} /> run log</div>
-        <div className="mono space-y-1.5 text-[11px] leading-relaxed">
+        <div className="mono space-y-1.5 text-[12.5px] leading-relaxed">
           {log.map((l, i) => (
             <div key={i} className={i === 0 ? 'text-[#dff5ee]' : 'text-[#7f9c98]'}>{l}</div>
           ))}

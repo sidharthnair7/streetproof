@@ -173,7 +173,7 @@ function Logo({ onClick }: { onClick?: () => void }) {
       </span>
       <div className="sidebar-copy">
         <div className="text-[14px] font-bold tracking-[-.04em]">StreetProof</div>
-        <div className="mono text-[9px] uppercase tracking-[.15em] text-[#809091]">
+        <div className="mono text-[11px] uppercase tracking-[.15em] text-[#586364]">
           evidence / not opinion
         </div>
       </div>
@@ -202,16 +202,16 @@ function Sidebar({ screen, setScreen }: { screen: Screen; setScreen: (s: Screen)
           <button
             key={id}
             onClick={() => setScreen(id)}
-            className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[12px] font-medium transition-colors ${
+            className={`group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13px] font-medium transition-colors ${
               screen === id || (screen === 'processing' && id === 'new-study')
                 ? 'bg-[#e5f2ee] text-[#126b6a] font-semibold'
-                : 'text-[#718081] hover:bg-[#f0f5f3] hover:text-[#1e4548]'
+                : 'text-[#576363] hover:bg-[#f0f5f3] hover:text-[#1e4548]'
             }`}
           >
             <Icon size={16} />
             <span className="sidebar-label">{label}</span>
             {id === 'new-study' && (
-              <span className="sidebar-label ml-auto rounded-full bg-[#f7c37b] px-1.5 py-0.5 text-[9px] text-[#76501e]">
+              <span className="sidebar-label ml-auto rounded-full bg-[#f7c37b] px-1.5 py-0.5 text-[11px] text-[#76501e]">
                 start
               </span>
             )}
@@ -221,14 +221,14 @@ function Sidebar({ screen, setScreen }: { screen: Screen; setScreen: (s: Screen)
 
       <div className="sidebar-footer mt-auto border-t border-[#dce5e3] pt-4">
         <div className="flex items-center gap-3">
-          <div className="grid h-8 w-8 place-items-center rounded-full bg-[#dceee8] text-[11px] font-bold text-[#266963]">
+          <div className="grid h-8 w-8 place-items-center rounded-full bg-[#dceee8] text-[12.5px] font-bold text-[#266963]">
             SB
           </div>
           <div>
-            <div className="text-[11px] font-semibold">Sidharth & Basu</div>
-            <div className="text-[10px] text-[#879394]">Resident workspace</div>
+            <div className="text-[12.5px] font-semibold">Sidharth & Basu</div>
+            <div className="text-[12px] text-[#5a6263]">Resident workspace</div>
           </div>
-          <MoreHorizontal size={15} className="ml-auto text-[#899596]" />
+          <MoreHorizontal size={15} className="ml-auto text-[#5a6263]" />
         </div>
       </div>
     </aside>
@@ -268,7 +268,7 @@ function Topbar({ screen, setScreen }: { screen: Screen; setScreen: (s: Screen) 
         <HealthPill />
         <button
           onClick={() => setScreen('landing')}
-          className="rounded-lg border border-[#dce5e3] bg-white p-2 text-[#718081] hover:bg-[#f0f5f3]"
+          className="rounded-lg border border-[#dce5e3] bg-white p-2 text-[#576363] hover:bg-[#f0f5f3]"
           title="Return to Public Landing Page"
         >
           <Globe size={16} />
@@ -287,7 +287,7 @@ function HealthPill() {
   const text = down ? 'StreetProof server offline' : !health ? 'Connecting…' : health.knowledgeMode === 'dkg-cli' ? 'Livepeer + OriginTrail DKG node' : 'Livepeer + local ledger (not the DKG)'
   const dot = down ? 'bg-[#d65a4f]' : health?.knowledgeMode === 'dkg-cli' ? 'bg-[#3db595]' : 'bg-[#e0a24a]'
   return (
-    <div className="hidden items-center gap-2 rounded-full border border-[#dce5e3] bg-white px-3 py-1.5 text-[11px] text-[#5e7170] sm:flex shadow-sm">
+    <div className="hidden items-center gap-2 rounded-full border border-[#dce5e3] bg-white px-3 py-1.5 text-[12.5px] text-[#536363] sm:flex shadow-sm">
       <span className={`live-dot h-2 w-2 rounded-full ${dot}`} />
       <span>{text}</span>
     </div>
@@ -364,12 +364,12 @@ function Landing({ setScreen }: { setScreen: (s: Screen) => void }) {
       <header className="landing-nav">
         <div className="flex items-center gap-3">
           <Logo onClick={() => setScreen('overview')} />
-          <span className="hidden h-5 w-px bg-white/15 sm:block" />
-          <span className="hidden items-center gap-2 mono text-[9px] uppercase tracking-[.16em] text-[#94afa9] sm:flex">
+          <span className="hidden h-5 w-px bg-white/15 min-[1500px]:block" />
+          <span className="hidden items-center gap-2 mono text-[11px] uppercase tracking-[.12em] text-[#94afa9] min-[1500px]:flex">
             <span className="live-dot h-1.5 w-1.5 rounded-full bg-[#9ce3d2]" /> Livepeer + OriginTrail DKG
           </span>
         </div>
-        <nav className="hidden items-center gap-7 lg:flex">
+        <nav className="hidden items-center gap-6 xl:flex">
           <a href="#proof" className="landing-link">
             Why proof gates?
           </a>
@@ -470,7 +470,7 @@ function Landing({ setScreen }: { setScreen: (s: Screen) => void }) {
           <div className="landing-visual">
             <div className="visual-topline">
               <span className="eyebrow text-[#82b1aa]">{showcase ? 'Real study, annotated by StreetProof' : 'Street telemetry'}</span>
-              <span className="mono text-[9px] text-[#789e9a]">{showcase ? clipName(showcase.sourceName) : 'waiting for a study'}</span>
+              <span className="mono text-[11px] text-[#789e9a]">{showcase ? clipName(showcase.sourceName) : 'waiting for a study'}</span>
             </div>
             <div className="landing-video">
               <TelemetryCanvas />
@@ -544,7 +544,7 @@ function Landing({ setScreen }: { setScreen: (s: Screen) => void }) {
         <section id="proof" className="landing-section reveal-up proof-section">
           <div className="section-intro">
             <div>
-              <div className="eyebrow text-[#55988d]">01 / the proof gate standard</div>
+              <div className="eyebrow text-[#43786f]">01 / the proof gate standard</div>
               <h2 className="landing-h2">
                 A number is only
                 <br />
@@ -591,7 +591,7 @@ function Landing({ setScreen }: { setScreen: (s: Screen) => void }) {
 
           <div className="opinion-vs-proof">
             <div>
-              <span className="eyebrow text-[#9c7b63]">Standard computer vision</span>
+              <span className="eyebrow text-[#755c4a]">Standard computer vision</span>
               <h3>“The model saw a car.”</h3>
               <p>
                 Boxes, labels, and a confident guess. No calibration. No provenance. No way to explain a refusal.
@@ -602,7 +602,7 @@ function Landing({ setScreen }: { setScreen: (s: Screen) => void }) {
               <ArrowRight size={18} />
             </div>
             <div>
-              <span className="eyebrow text-[#55988d]">StreetProof refusal gate</span>
+              <span className="eyebrow text-[#43786f]">StreetProof refusal gate</span>
               <h3>“This speed is defensible.”</h3>
               <p>
                 Known scale, known time, a steady track, a stable box, and a record on the OriginTrail DKG that anyone with the video can check.
@@ -615,7 +615,7 @@ function Landing({ setScreen }: { setScreen: (s: Screen) => void }) {
         <section id="pipeline" className="landing-section pipeline-section">
           <div className="section-intro">
             <div>
-              <div className="eyebrow text-[#55988d]">02 / the forensic pipeline</div>
+              <div className="eyebrow text-[#43786f]">02 / the forensic pipeline</div>
               <h2 className="landing-h2">
                 From a phone clip
                 <br />
@@ -691,7 +691,7 @@ function Landing({ setScreen }: { setScreen: (s: Screen) => void }) {
         <section id="impact" className="landing-section impact-section">
           <div className="section-intro">
             <div>
-              <div className="eyebrow text-[#55988d]">04 / civic impact</div>
+              <div className="eyebrow text-[#43786f]">04 / civic impact</div>
               <h2 className="landing-h2">
                 Small cameras.
                 <br />
@@ -884,7 +884,7 @@ export default function App() {
             </motion.div>
           </AnimatePresence>
         </main>
-        <footer className="flex flex-col justify-between gap-2 border-t border-[#dce5e3] px-5 py-4 text-[10px] text-[#829090] md:flex-row md:px-9 bg-white/50 backdrop-blur-sm">
+        <footer className="flex flex-col justify-between gap-2 border-t border-[#dce5e3] px-5 py-4 text-[12px] text-[#586262] md:flex-row md:px-9 bg-white/50 backdrop-blur-sm">
           <span>StreetProof · resident evidence tool, not a certified enforcement device.</span>
           <span className="mono">local analysis · Livepeer detection · DKG provenance</span>
         </footer>

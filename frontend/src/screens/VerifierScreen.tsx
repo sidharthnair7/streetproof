@@ -56,7 +56,7 @@ export function VerifierScreen({ initialUal }: VerifierScreenProps) {
           <br />
           <em className="text-[#126b6a]">the study measured?</em>
         </h2>
-        <p className="mt-3 max-w-[600px] text-[13px] leading-6 text-[#617473]">
+        <p className="mt-3 max-w-[600px] text-[13px] leading-6 text-[#536463]">
           A city engineer, journalist or neighbour picks the video they were given. Your browser computes its SHA-256 fingerprint. Only the fingerprint goes to the StreetProof server, which looks up the published study on the OriginTrail DKG and compares.
         </p>
       </div>
@@ -66,34 +66,34 @@ export function VerifierScreen({ initialUal }: VerifierScreenProps) {
           <div>
             <div className="eyebrow mb-2 flex items-center gap-2"><Lock size={11} className="text-[#3bb9a3]" /> Study on the DKG</div>
             {published.length > 0 && (
-              <select value={chosen ? ual : ''} onChange={(e) => setUal(e.target.value)} className="mb-2 w-full rounded-lg border border-[#dce5e3] bg-white px-3 py-2 text-[12px]">
+              <select value={chosen ? ual : ''} onChange={(e) => setUal(e.target.value)} className="mb-2 w-full rounded-lg border border-[#dce5e3] bg-white px-3 py-2 text-[13px]">
                 <option value="">Paste a locator below, or pick a published study</option>
                 {published.map((s) => (
                   <option key={s.id} value={s.published!.ual}>{s.streetLabel || clipName(s.sourceName)} · {clipName(s.sourceName)} · {s.id}</option>
                 ))}
               </select>
             )}
-            <input value={ual} onChange={(e) => setUal(e.target.value)} placeholder="did:dkg:context-graph:…" className="mono w-full rounded-lg border border-[#dce5e3] bg-white px-3 py-2 text-[11px]" />
+            <input value={ual} onChange={(e) => setUal(e.target.value)} placeholder="did:dkg:context-graph:…" className="mono w-full rounded-lg border border-[#dce5e3] bg-white px-3 py-2 text-[12.5px]" />
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-xl border border-[#d6e5e1] bg-[#f8fbf9] p-4">
               <div className="eyebrow mb-1.5 text-[#21786c]">Fingerprint on the DKG</div>
-              <div className="break-all mono text-[11px] font-bold leading-relaxed text-[#18232a]">
+              <div className="break-all mono text-[12.5px] font-bold leading-relaxed text-[#18232a]">
                 {result?.recordedSha256 ?? (chosen ? chosen.videoSha256 : '–')}
               </div>
-              <div className="mt-2 text-[10px] text-[#6b8280]">{result?.recordedSha256 ? 'read from the Knowledge Asset just now' : chosen ? 'expected, from the study record' : 'pick or paste a study'}</div>
+              <div className="mt-2 text-[12px] text-[#526463]">{result?.recordedSha256 ? 'read from the Knowledge Asset just now' : chosen ? 'expected, from the study record' : 'pick or paste a study'}</div>
             </div>
             <div className="flex flex-col justify-between rounded-xl border border-[#d6e5e1] bg-[#f8fbf9] p-4">
               <div className="eyebrow mb-1.5 text-[#21786c]">Fingerprint of your video</div>
               {hash ? (
-                <div className={`break-all mono text-[11px] font-bold leading-relaxed ${outcome === 'MATCH' ? 'text-[#1f7364]' : outcome ? 'text-[#b1462f]' : 'text-[#18232a]'}`}>{hash}</div>
+                <div className={`break-all mono text-[12.5px] font-bold leading-relaxed ${outcome === 'MATCH' ? 'text-[#1f7364]' : outcome ? 'text-[#b1462f]' : 'text-[#18232a]'}`}>{hash}</div>
               ) : busy ? (
-                <div className="flex items-center gap-2 mono text-[10px] text-[#26796c]"><Loader2 size={12} className="animate-spin" /> hashing in your browser…</div>
+                <div className="flex items-center gap-2 mono text-[12px] text-[#26796c]"><Loader2 size={12} className="animate-spin" /> hashing in your browser…</div>
               ) : (
-                <div className="text-[11px] text-[#6b8280]">No video chosen yet</div>
+                <div className="text-[12.5px] text-[#526463]">No video chosen yet</div>
               )}
-              <div className="mt-2 text-[10px] text-[#6b8280]">{file ? `${file.name}${tampered ? ' with one byte changed' : ''}` : ''}</div>
+              <div className="mt-2 text-[12px] text-[#526463]">{file ? `${file.name}${tampered ? ' with one byte changed' : ''}` : ''}</div>
             </div>
           </div>
 
@@ -117,21 +117,21 @@ export function VerifierScreen({ initialUal }: VerifierScreenProps) {
             )}
           </div>
 
-          {error && <div className="rounded-xl border border-[#f1c8bd] bg-[#fdf1ee] px-4 py-3 text-[12px] text-[#9b3d2a]">{error}</div>}
+          {error && <div className="rounded-xl border border-[#f1c8bd] bg-[#fdf1ee] px-4 py-3 text-[13px] text-[#9b3d2a]">{error}</div>}
 
           {result && (
-            <div className={`rounded-xl border p-4 text-[12px] leading-relaxed ${outcome === 'MATCH' ? 'border-[#b2d9cd] bg-[#dff3eb] text-[#1c6457]' : outcome === 'MISMATCH' ? 'border-[#f1c8bd] bg-[#fdf1ee] text-[#9b3d2a]' : 'border-[#e3d9c5] bg-[#fbf6ec] text-[#7a5d2c]'}`}>
+            <div className={`rounded-xl border p-4 text-[13px] leading-relaxed ${outcome === 'MATCH' ? 'border-[#b2d9cd] bg-[#dff3eb] text-[#1c6457]' : outcome === 'MISMATCH' ? 'border-[#f1c8bd] bg-[#fdf1ee] text-[#9b3d2a]' : 'border-[#e3d9c5] bg-[#fbf6ec] text-[#7a5d2c]'}`}>
               <div className="flex items-start gap-2.5">
                 {outcome === 'MATCH' ? <ShieldCheck size={18} className="mt-0.5 shrink-0" /> : outcome === 'MISMATCH' ? <ShieldAlert size={18} className="mt-0.5 shrink-0" /> : <Hash size={18} className="mt-0.5 shrink-0" />}
                 <div>
-                  <div className="mono text-[11px] font-bold tracking-wider">{outcome}</div>
+                  <div className="mono text-[12.5px] font-bold tracking-wider">{outcome}</div>
                   <div>{result.message}</div>
                   {result.summary && (
-                    <div className="mt-2 text-[11px]">
+                    <div className="mt-2 text-[12.5px]">
                       The study it matches: {result.summary.vehiclesProven} of {result.summary.vehiclesObserved} vehicles proven{result.summary.v85Kmh != null ? `, 85th percentile ${result.summary.v85Kmh.toFixed(1)} km/h` : ''}.
                     </div>
                   )}
-                  {result.ual && <div className="mono mt-2 break-all text-[10px] opacity-80"><KeyRound size={10} className="mr-1 inline" />{short(result.ual, 40, 16)}</div>}
+                  {result.ual && <div className="mono mt-2 break-all text-[12px] opacity-80"><KeyRound size={10} className="mr-1 inline" />{short(result.ual, 40, 16)}</div>}
                 </div>
               </div>
             </div>
@@ -144,13 +144,13 @@ export function VerifierScreen({ initialUal }: VerifierScreenProps) {
               ['Your video never left your computer', hash ? true : null],
             ].map(([label, ok]) => (
               <div key={label as string} className="flex items-center justify-between rounded-xl border border-[#e2ece9] bg-white/75 px-4 py-2.5">
-                <span className="flex items-center gap-2.5 text-[12px] font-semibold text-[#18232a]">
-                  <span className={`grid h-6 w-6 place-items-center rounded-full ${ok === true ? 'bg-[#d8f1e7] text-[#257968]' : ok === false ? 'bg-[#fbe4df] text-[#b1462f]' : 'bg-[#eef3f2] text-[#9cb0ae]'}`}>
+                <span className="flex items-center gap-2.5 text-[13px] font-semibold text-[#18232a]">
+                  <span className={`grid h-6 w-6 place-items-center rounded-full ${ok === true ? 'bg-[#d8f1e7] text-[#257968]' : ok === false ? 'bg-[#fbe4df] text-[#b1462f]' : 'bg-[#eef3f2] text-[#576361]'}`}>
                     {ok === true ? <Check size={14} /> : ok === false ? <X size={14} /> : <Hash size={12} />}
                   </span>
                   {label as string}
                 </span>
-                <span className={`mono text-[9px] font-bold uppercase tracking-wider ${ok === true ? 'text-[#2b7e6d]' : ok === false ? 'text-[#b1462f]' : 'text-[#9cb0ae]'}`}>
+                <span className={`mono text-[11px] font-bold uppercase tracking-wider ${ok === true ? 'text-[#2b7e6d]' : ok === false ? 'text-[#b1462f]' : 'text-[#576361]'}`}>
                   {ok === true ? 'confirmed' : ok === false ? 'failed' : 'waiting'}
                 </span>
               </div>

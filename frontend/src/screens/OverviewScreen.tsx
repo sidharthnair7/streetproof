@@ -19,8 +19,8 @@ export function statusBadge(s: StudyView) {
   if (s.status === 'DONE' && s.published) return { text: 'Published', cls: 'bg-[#d9f3e9] text-[#287463]' }
   if (s.status === 'DONE') return { text: 'Measured', cls: 'bg-[#e7eef9] text-[#3e67a6]' }
   if (s.status === 'FAILED') return { text: 'Failed', cls: 'bg-[#fbe4df] text-[#b1462f]' }
-  if (s.status === 'UPLOADED') return { text: 'Not run', cls: 'bg-[#edf0ef] text-[#6c7778]' }
-  return { text: 'Running', cls: 'bg-[#fff0df] text-[#ce7b35]' }
+  if (s.status === 'UPLOADED') return { text: 'Not run', cls: 'bg-[#edf0ef] text-[#596262]' }
+  return { text: 'Running', cls: 'bg-[#fff0df] text-[#9f5f29]' }
 }
 
 export function OverviewScreen({ setScreen, openStudy }: OverviewScreenProps) {
@@ -76,7 +76,7 @@ export function OverviewScreen({ setScreen, openStudy }: OverviewScreenProps) {
           </div>
           <div className="relative z-10 mt-10 flex flex-wrap gap-2">
             {['Livepeer yolo-detect', 'Deterministic refusal gate', 'OriginTrail DKG'].map((t) => (
-              <span key={t} className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 mono text-[9px] uppercase tracking-[.12em] text-[#b5d6d0]">{t}</span>
+              <span key={t} className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 mono text-[11px] uppercase tracking-[.12em] text-[#b5d6d0]">{t}</span>
             ))}
           </div>
         </div>
@@ -89,9 +89,9 @@ export function OverviewScreen({ setScreen, openStudy }: OverviewScreenProps) {
                   <div>
                     <div className="eyebrow mb-1">Latest measured study</div>
                     <div className="text-[16px] font-bold text-[#18232a]">{studyTitle(featured)}</div>
-                    <div className="mono text-[10px] text-[#869998]">{clipName(featured.sourceName)}</div>
+                    <div className="mono text-[12px] text-[#576363]">{clipName(featured.sourceName)}</div>
                   </div>
-                  <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold ${statusBadge(featured).cls}`}>
+                  <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-semibold ${statusBadge(featured).cls}`}>
                     {featured.published && <Check size={11} />} {statusBadge(featured).text}
                   </span>
                 </div>
@@ -99,18 +99,18 @@ export function OverviewScreen({ setScreen, openStudy }: OverviewScreenProps) {
                   <span className="display text-6xl text-[#18232a] font-semibold">
                     <AnimatedCounter value={featured.summary?.v85Kmh ?? 0} decimals={1} />
                   </span>
-                  <span className="mb-2 text-[12px] font-medium text-[#657675] leading-tight">km/h<br />85th percentile</span>
+                  <span className="mb-2 text-[13px] font-medium text-[#556362] leading-tight">km/h<br />85th percentile</span>
                 </div>
-                <div className="space-y-3 border-t border-[#e5ebea] pt-4 text-[12px]">
+                <div className="space-y-3 border-t border-[#e5ebea] pt-4 text-[13px]">
                   <div className="flex justify-between gap-3">
-                    <span className="text-[#6d7e7d]">Over the {featured.postedLimitKmh} km/h limit</span>
-                    <span className="font-bold text-[#c46c34]">
+                    <span className="text-[#556261]">Over the {featured.postedLimitKmh} km/h limit</span>
+                    <span className="font-bold text-[#a55b2c]">
                       {Math.round((featured.summary?.shareOverLimit ?? 0) * 100)}% of {featured.summary?.vehiclesProven} proven
                     </span>
                   </div>
                   <div className="flex justify-between gap-3">
-                    <span className="text-[#6d7e7d]">Knowledge Asset</span>
-                    <span className="mono text-right text-[11px] font-semibold text-[#257b6d]">
+                    <span className="text-[#556261]">Knowledge Asset</span>
+                    <span className="mono text-right text-[12.5px] font-semibold text-[#257b6d]">
                       {featured.published ? short(featured.published.ual, 16, 6) : 'not published yet'}
                     </span>
                   </div>
@@ -122,7 +122,7 @@ export function OverviewScreen({ setScreen, openStudy }: OverviewScreenProps) {
               </button>
             </>
           ) : (
-            <div className="grid h-full min-h-[220px] place-items-center text-center text-[12px] text-[#6d7e7d]">
+            <div className="grid h-full min-h-[220px] place-items-center text-center text-[13px] text-[#556261]">
               {studies === null && !error ? <Loader2 className="animate-spin" size={18} /> : 'No measured study yet. Run a sample clip to see one here.'}
             </div>
           )}
@@ -135,48 +135,48 @@ export function OverviewScreen({ setScreen, openStudy }: OverviewScreenProps) {
             <div className="eyebrow mb-1">This workspace</div>
             <h2 className="text-[17px] font-bold text-[#18232a]">Workspace pulse</h2>
           </div>
-          <span className="text-[11px] text-[#718584]">Live from the StreetProof server</span>
+          <span className="text-[12.5px] text-[#556463]">Live from the StreetProof server</span>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <BentoCard glowColor="rgba(59, 185, 163, 0.3)">
             <div className="mb-4 flex items-center justify-between">
               <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#e1f2ed] text-[#217b6d]"><Users size={18} /></span>
-              <span className="mono text-[9px] text-[#768b89]">{done.length} STUDIES</span>
+              <span className="mono text-[11px] text-[#556463]">{done.length} STUDIES</span>
             </div>
             <div className="eyebrow mb-1">Vehicles observed</div>
             <div className="stat-number text-3xl font-medium text-[#18232a]"><AnimatedCounter value={totals.observed} /></div>
-            <div className="mt-1 text-[11px] text-[#788a89]">Tracked from Livepeer detections</div>
+            <div className="mt-1 text-[12.5px] text-[#566363]">Tracked from Livepeer detections</div>
           </BentoCard>
           <BentoCard glowColor="rgba(53, 102, 174, 0.3)">
             <div className="mb-4 flex items-center justify-between">
               <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#e7eef9] text-[#3e67a6]"><ShieldCheck size={18} /></span>
-              <span className="mono text-[9px] text-[#768b89]">{totals.observed ? Math.round((totals.proven / totals.observed) * 100) : 0}% PROVEN</span>
+              <span className="mono text-[11px] text-[#556463]">{totals.observed ? Math.round((totals.proven / totals.observed) * 100) : 0}% PROVEN</span>
             </div>
             <div className="eyebrow mb-1">Speeds proven</div>
             <div className="stat-number text-3xl font-medium text-[#3e67a6]"><AnimatedCounter value={totals.proven} /></div>
-            <div className="mt-1 text-[11px] text-[#788a89]">The rest were refused, with a reason</div>
+            <div className="mt-1 text-[12.5px] text-[#566363]">The rest were refused, with a reason</div>
           </BentoCard>
           <BentoCard glowColor="rgba(236, 138, 69, 0.3)">
             <div className="mb-4 flex items-center justify-between">
-              <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#fff0df] text-[#ce7b35]"><Gauge size={18} /></span>
-              <span className="mono text-[9px] text-[#768b89]">HELD-OUT CLIPS</span>
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#fff0df] text-[#9f5f29]"><Gauge size={18} /></span>
+              <span className="mono text-[11px] text-[#556463]">HELD-OUT CLIPS</span>
             </div>
             <div className="eyebrow mb-1">Mean error</div>
-            <div className="stat-number text-3xl font-medium text-[#ce7b35]">
+            <div className="stat-number text-3xl font-medium text-[#9f5f29]">
               {validation?.meanAbsErrorPercent != null ? <AnimatedCounter value={validation.meanAbsErrorPercent} decimals={1} suffix="%" /> : '–'}
             </div>
-            <div className="mt-1 text-[11px] text-[#788a89]">
+            <div className="mt-1 text-[12.5px] text-[#566363]">
               {validation?.meanAbsErrorPercent != null ? `${validation.proven} unseen clips, worst ${validation.maxAbsErrorPercent}%` : 'Run the accuracy test'}
             </div>
           </BentoCard>
           <BentoCard glowColor="rgba(156, 227, 210, 0.35)">
             <div className="mb-4 flex items-center justify-between">
               <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#e1f2ed] text-[#217b6d]"><Database size={18} /></span>
-              <span className="mono text-[9px] text-[#768b89]">DKG</span>
+              <span className="mono text-[11px] text-[#556463]">DKG</span>
             </div>
             <div className="eyebrow mb-1">Studies published</div>
             <div className="stat-number text-3xl font-medium text-[#18232a]"><AnimatedCounter value={totals.published} /></div>
-            <div className="mt-1 text-[11px] text-[#788a89]">As Knowledge Assets on OriginTrail</div>
+            <div className="mt-1 text-[12.5px] text-[#566363]">As Knowledge Assets on OriginTrail</div>
           </BentoCard>
         </div>
       </section>
@@ -187,15 +187,15 @@ export function OverviewScreen({ setScreen, openStudy }: OverviewScreenProps) {
             <div className="eyebrow mb-1">Audit ledger</div>
             <h3 className="text-[15px] font-semibold text-[#18232a]">Speed studies</h3>
           </div>
-          <button onClick={() => setScreen('accuracy')} className="text-[12px] font-semibold text-[#236d6b] hover:text-[#134947] flex items-center gap-1">
+          <button onClick={() => setScreen('accuracy')} className="text-[13px] font-semibold text-[#236d6b] hover:text-[#134947] flex items-center gap-1">
             <span>How accurate is it?</span>
             <ArrowRight size={14} />
           </button>
         </div>
-        {error && <div className="px-6 py-5 text-[12px] text-[#b1462f]">Could not reach the StreetProof server: {error}</div>}
+        {error && <div className="px-6 py-5 text-[13px] text-[#b1462f]">Could not reach the StreetProof server: {error}</div>}
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-left text-[12px]">
-            <thead className="bg-[#f8faf9] text-[#7e8f8e]">
+          <table className="w-full min-w-[720px] text-left text-[13px]">
+            <thead className="bg-[#f8faf9] text-[#576362]">
               <tr>
                 <th className="px-6 py-3.5 font-medium">Study</th>
                 <th className="px-4 py-3.5 font-medium">Measured</th>
@@ -213,15 +213,15 @@ export function OverviewScreen({ setScreen, openStudy }: OverviewScreenProps) {
                   <tr key={s.id} onClick={() => openStudy(s.id)} className="cursor-pointer transition-colors hover:bg-[#f6faf8]">
                     <td className="px-6 py-4">
                       <div className="font-semibold text-[#18232a]">{studyTitle(s)}</div>
-                      <div className="mono text-[10px] text-[#869998]">{clipName(s.sourceName)} · {s.id}</div>
+                      <div className="mono text-[12px] text-[#576363]">{clipName(s.sourceName)} · {s.id}</div>
                     </td>
-                    <td className="px-4 py-4 text-[#667a78]">{new Date(s.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
+                    <td className="px-4 py-4 text-[#546462]">{new Date(s.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</td>
                     <td className="px-4 py-4 text-[#18232a]">{s.summary?.vehiclesObserved ?? '–'}</td>
                     <td className="px-4 py-4 font-semibold text-[#1f7364]">{s.summary?.vehiclesProven ?? '–'}</td>
                     <td className="px-4 py-4 font-semibold text-[#18232a]">{s.summary?.v85Kmh != null ? `${s.summary.v85Kmh.toFixed(1)} km/h` : '–'}</td>
-                    <td className="px-4 py-4 text-[#667a78]">{s.calibrationUal ? 'from the DKG' : s.calibration ? s.calibration.mode.toLowerCase().replace('_', ' ') : 'none'}</td>
+                    <td className="px-4 py-4 text-[#546462]">{s.calibrationUal ? 'from the DKG' : s.calibration ? s.calibration.mode.toLowerCase().replace('_', ' ') : 'none'}</td>
                     <td className="px-4 py-4">
-                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold ${badge.cls}`}>
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[12px] font-semibold ${badge.cls}`}>
                         {s.published && <Check size={11} />}
                         {badge.text}
                       </span>
@@ -230,7 +230,7 @@ export function OverviewScreen({ setScreen, openStudy }: OverviewScreenProps) {
                 )
               })}
               {studies && studies.length === 0 && (
-                <tr><td colSpan={7} className="px-6 py-6 text-center text-[#6d7e7d]">No studies yet.</td></tr>
+                <tr><td colSpan={7} className="px-6 py-6 text-center text-[#556261]">No studies yet.</td></tr>
               )}
             </tbody>
           </table>

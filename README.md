@@ -77,7 +77,14 @@ https://streetproof.dev/ns#minRSquared      0.95
 https://streetproof.dev/ns#v85Kmh           80
 ```
 
-**Where it runs, honestly.** An edge node on the **DKG V10 Base Sepolia testnet**, context graph `streetproof`. Assets are written to **Shared Working Memory** (`dkg ka create ... --share`), which needs no gas. They are **not yet registered on-chain as Verifiable Memory**: that needs testnet ETH for gas, and OriginTrail's testnet faucet had no ETH to give (it did send testnet TRAC). Until then, the records live on our node, so today the check runs against our node's copy. A `local` mode (`STREETPROOF_DKG_MODE=local`) writes the same Turtle to disk for development; **every result in this README came from the real node, not local mode.**
+**Where it runs, on-chain.** An edge node on the **DKG V10 Base Sepolia testnet**, context graph `streetproof`, **registered on-chain** as context graph 488 ([registration tx](https://sepolia.basescan.org/tx/0x1d465dabd6b451cf9fc5a2b6c9892aaead2cc889e6ac787f9736ea272699cddc)). Two Knowledge Assets are published to **Verifiable Memory**, each acknowledged by three OriginTrail core nodes:
+
+| Asset | UAL | Transaction |
+|---|---|---|
+| The 3-pass calibration used by every study above | `did:dkg:base:84532/0x5ea07ffddc58dd261102746e6651747e18429dbe/15` | [0xbabe6c6d…cad8](https://sepolia.basescan.org/tx/0xbabe6c6dbfecdb8066ec3e7ce4411d16840cdeed81eb058ccc4dd999a1eccad8), block 47243284 |
+| A published study (Renault Captur: 3 tracked, 1 proven, 2 refused) | `did:dkg:base:84532/0x5ea07ffddc58dd261102746e6651747e18429dbe/16` | [0x6f722e8f…2825](https://sepolia.basescan.org/tx/0x6f722e8f31beae015188695ad03450273098713ffb5fc66be5e205cd6f652825), block 47243591 |
+
+The app's **Publish to the DKG** button writes to **Shared Working Memory** (`dkg ka create ... --share`), which is instant and needs no gas. Moving an asset to Verifiable Memory is `dkg ka publish <asset> -c <context graph>`; it needs a little testnet ETH and storage acknowledgements from 3 core nodes, which on Sep 24 took several retries because one core node ran an incompatible protocol version. A `local` mode (`STREETPROOF_DKG_MODE=local`) writes the same Turtle to disk for development; **every result in this README came from the real node, not local mode.**
 
 ### What lives where
 
@@ -87,7 +94,7 @@ https://streetproof.dev/ns#v85Kmh           80
 | Every frame | Sent to Livepeer for `yolo-detect` (frames can show faces and plates; StreetProof does not blur them yet) |
 | One frame per study | Sent to Livepeer's `nemotron-omni-vision` when the footage check is on |
 | Detection cache, study state | Local disk only |
-| Video fingerprint, method, thresholds, per-vehicle results, calibration link | Published as a Knowledge Asset (Shared Working Memory on the testnet node) |
+| Video fingerprint, method, thresholds, per-vehicle results, calibration link | Published as a Knowledge Asset: Shared Working Memory on the testnet node, and for the calibration and one study, Verifiable Memory on Base Sepolia |
 | DKG node keys (`~/.dkg`) | Local only, never committed |
 
 ## Does it measure correctly?
@@ -125,7 +132,7 @@ Reproduce it: put the VS13 sample clips in `samples/` (see below), start the app
 - **The gate cannot catch a bad calibration.** It refuses shaky measurements, but a calibration that is off shifts every speed by the same factor. Multi-pass calibration and its 15% agreement rule are the answer, not a guarantee, and a calibration belongs to one camera in one position.
 - **Head-on speeds depend on the vehicle's height.** A car 10% taller than assumed reads about 10% slow. Every vehicle in one study gets the same assumed height.
 - **The validation is head-on, one car per clip, at highway speeds.** Side-on measurement (curb marks or typical car length) is built and unit-tested but has not been checked against known speeds.
-- **Not on-chain yet.** Knowledge Assets are in Shared Working Memory on our testnet node, not registered as Verifiable Memory (see above).
+- **Most studies stay in Shared Working Memory.** The calibration and one study are in Verifiable Memory on-chain; the rest are in Shared Working Memory on our testnet node, because moving each one on-chain takes gas and several minutes of network acknowledgements (see above).
 - **No blurring yet.** Frames go to Livepeer as they are; blurring faces and plates before sending is the next privacy step.
 
 ## Prior art
