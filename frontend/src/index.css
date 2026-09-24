@@ -209,3 +209,7 @@ a { color: inherit; text-decoration: none; }
 .field-item.is-active .field-key { border-color: #6d6536; color: #efe07d; }
 @media (max-width: 1100px) { .field-hint { display: none; } }
 .landing-aurora-two { right: 0; }
+@media (min-width: 901px) {
+  .landing-hero { padding-top: clamp(118px, 15vh, 170px); padding-bottom: 60px; }
+  .landing-title { font-size: clamp(3.4rem, min(5.6vw, 10.2vh), 6.2rem); }
+}
