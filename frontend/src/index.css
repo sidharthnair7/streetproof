@@ -213,3 +213,4 @@ a { color: inherit; text-decoration: none; }
   .landing-hero { padding-top: clamp(118px, 15vh, 170px); padding-bottom: 60px; }
   .landing-title { font-size: clamp(3.4rem, min(5.6vw, 10.2vh), 6.2rem); }
 }
+@media (max-width: 1500px) { .field-hint { left: auto; right: 18px; transform: none; } }

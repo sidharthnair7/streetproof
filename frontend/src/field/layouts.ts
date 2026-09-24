@@ -333,7 +333,7 @@ export function computeLayout(
     const y = (0.5 - p.y[i]) * width * ratio
     return [Math.round(x / SPACING), Math.round(y / SPACING)]
   })
-  labels.push({ text: 'Where in the camera frame Livepeer boxed each car', sub: 'overlapping boxes are stacked', x: extent.minX, y: extent.minY - 3, z: 0 })
+  labels.push({ text: 'Where in the camera frame Livepeer boxed each car. Overlapping boxes are stacked.', x: extent.minX + (extent.maxX - extent.minX) * 0.3, y: extent.minY - 3, z: 0 })
   const centred = recentre(visible, positions, extent, labels)
   return { positions, labels, view: tiltedView(centred, aspect) }
 }
