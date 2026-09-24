@@ -4,6 +4,14 @@
 
 **Livepeer Agent Hackathon, Track 2: Livepeer Agent + OriginTrail DKG.** Demo video: _link in the submission_.
 
+**How each sponsor is used, in code:**
+
+- **Livepeer Agent:** every frame goes to `yolo-detect` through the Livepeer Agent MCP (`upload`, then `run_capability`), about 300 calls for a 10-second clip, and `nemotron-omni-vision` checks the footage and can only refuse. [LivepeerClient.java](src/main/java/streetproof/streetproof/livepeer/LivepeerClient.java)
+- **OriginTrail DKG:** the calibration is published once and read back by SPARQL for every later study; each study is a Knowledge Asset holding the video's SHA-256. [DkgCliPublisher.java](src/main/java/streetproof/streetproof/ledger/DkgCliPublisher.java), [CalibrationService.java](src/main/java/streetproof/streetproof/calibration/CalibrationService.java)
+- **The refusal gate:** [SpeedGate.java](src/main/java/streetproof/streetproof/gate/SpeedGate.java)
+
+**For judges, in one minute:** [what the DKG changes](#what-the-dkg-changes) · [the on-chain transactions](#where-it-runs-on-chain) · [accuracy against known speeds](#does-it-measure-correctly) · [limits](#limits-honestly) · [run it](#run-it)
+
 ![License: MIT](https://img.shields.io/badge/license-MIT-16a34a)
 
 ![Every Livepeer detection as a disc, animating between layouts](docs/media/every-detection.gif)
@@ -21,22 +29,36 @@ StreetProof turns a video into the numbers cities use, the 85th and 95th percent
 3. **Measure.** Side-on footage uses a known distance on the road. Head-on footage uses how fast a vehicle's box grows: when a car drives towards the camera, 1 / (box height) rises in a straight line, and the slope of that line times the camera's focal length times the car's height is its speed.
 4. **Refuse.** A fixed set of rules decides whether each vehicle's evidence supports a speed: enough clean frames, a steady straight-line fit, a stable box, a confident detection, a plausible speed. If not, the vehicle is **refused**, with the reason. Refused vehicles never enter the percentiles.
 5. **Publish.** The study (video fingerprint, method, thresholds, every vehicle's result, the calibration it used) becomes a Knowledge Asset on the DKG.
-6. **Verify.** Anyone with the video and the study's locator can hash the video in their browser and compare it with the fingerprint read from the DKG. A single changed byte gives `MISMATCH`.
+6. **Verify.** Anyone with the video and the study's locator can check it on the Verify page: the browser hashes the video (the video never leaves their computer), and the server reads the recorded fingerprint from the DKG. A single changed byte gives `MISMATCH`.
 7. **Report.** A printable one-page report for the city: the finding, the 85th and 95th percentiles against Toronto's warrant as an example, the histogram, refusals, method, how to verify, and limits.
 
 ```mermaid
-flowchart LR
-  V[Phone video] --> F[Frames]
-  F -->|every frame| L[Livepeer Agent: yolo-detect]
-  L --> T[Tracking]
-  C[(Calibration on the DKG)] --> S
-  T --> S[Speed maths]
-  S --> G{Refusal gate}
-  G -->|proven| R[Study]
-  G -->|refused, with reason| R
-  R --> K[(Knowledge Asset on the DKG)]
-  K --> Y[Verify / city report]
+flowchart TD
+  V["Phone video of your street"] --> F["Frames"]
+  subgraph LP["Livepeer: sees"]
+    L["yolo-detect on every frame"]
+    N["Vision model checks the footage"]
+  end
+  F --> L
+  F --> N
+  C[("OriginTrail DKG<br/>calibration, on-chain")]
+  subgraph LOCAL["StreetProof: local and deterministic"]
+    T["Tracking"] --> S["Speed maths"] --> G{"Refusal gate<br/>7 rules"}
+  end
+  L --> T
+  C -->|loaded back and cited| S
+  N -->|can refuse, never adds a speed| G
+  G -->|proven| R["Study: 85th and 95th percentile"]
+  G -->|refused, with the reason| R
+  R --> K[("OriginTrail DKG<br/>study Knowledge Asset<br/>video SHA-256, speeds, refusals")]
+  K --> Y["Anyone verifies the video<br/>Report for the city"]
+  classDef lp fill:#134e4a,stroke:#3bb9a3,color:#ffffff
+  classDef dkg fill:#3b2f63,stroke:#8c7ad6,color:#ffffff
+  class L,N lp
+  class C,K dkg
 ```
+
+Teal is Livepeer, purple is the OriginTrail DKG, everything else runs locally.
 
 ## The app
 
@@ -62,6 +84,18 @@ Livepeer is how StreetProof sees. Remove it and there is no measurement.
 
 Two features only work because of it.
 
+### What the DKG changes
+
+Same VS13 clips, same Livepeer detections. The only thing that changes is the calibration the study can load from the DKG:
+
+| Calibration the study can load | Result on clips the calibration wasn't learned from |
+|---|---|
+| None | Every car refused, `NO_CALIBRATION`. No speeds at all. |
+| One clip, the unluckiest choice (Kia Sportage) | Speeds measured, 11.1% mean error, worst 16.8% |
+| **3 passes, published and loaded back from the DKG** | **9 of 9 proven, 4.5% mean error, worst 7.1%** |
+
+Across all 12 single-clip choices the average is 5.9%; several passes lower the risk of an unlucky one (the cross-validation is in [Does it measure correctly?](#does-it-measure-correctly)). A calibration learned once, published, and reused by every later study from that camera is what turns a camera into a measuring instrument. The DKG is where that knowledge lives and where anyone can see which passes it came from.
+
 **1. Calibration memory.** Turning pixels into speed needs a calibration for each camera. StreetProof learns it from cars driving past at known speeds, publishes it as a Knowledge Asset, and later studies from that camera **load it back from the DKG** (a SPARQL query to the node for the asset's graph) and cite it. A calibration is built from several passes: the focal length is the **median** of the passes, and if one pass disagrees with the median by more than 15% the calibration itself is refused. Each pass video is published as its own Knowledge Asset and the calibration cites them, so anyone can see which drives a calibration came from and how much they agreed.
 
 **2. Tamper check.** A study's Knowledge Asset holds the SHA-256 fingerprint of the exact video it measured. The verifier reads that fingerprint from the DKG and compares.
@@ -77,12 +111,14 @@ https://streetproof.dev/ns#minRSquared      0.95
 https://streetproof.dev/ns#v85Kmh           80
 ```
 
-**Where it runs, on-chain.** An edge node on the **DKG V10 Base Sepolia testnet**, context graph `streetproof`, **registered on-chain** as context graph 488 ([registration tx](https://sepolia.basescan.org/tx/0x1d465dabd6b451cf9fc5a2b6c9892aaead2cc889e6ac787f9736ea272699cddc)). Two Knowledge Assets are published to **Verifiable Memory**, each acknowledged by three OriginTrail core nodes:
+<a id="where-it-runs-on-chain"></a>**Where it runs, on-chain.** An edge node on the **DKG V10 Base Sepolia testnet**, context graph `streetproof`, **registered on-chain** as context graph 488 ([registration tx](https://sepolia.basescan.org/tx/0x1d465dabd6b451cf9fc5a2b6c9892aaead2cc889e6ac787f9736ea272699cddc)). Two Knowledge Assets are published to **Verifiable Memory**, each acknowledged by three OriginTrail core nodes:
 
 | Asset | UAL | Transaction |
 |---|---|---|
-| The 3-pass calibration used by every study above | `did:dkg:base:84532/0x5ea07ffddc58dd261102746e6651747e18429dbe/15` | [0xbabe6c6d…cad8](https://sepolia.basescan.org/tx/0xbabe6c6dbfecdb8066ec3e7ce4411d16840cdeed81eb058ccc4dd999a1eccad8), block 47243284 |
+| The 3-pass calibration used by every study in the accuracy test | `did:dkg:base:84532/0x5ea07ffddc58dd261102746e6651747e18429dbe/15` | [0xbabe6c6d…cad8](https://sepolia.basescan.org/tx/0xbabe6c6dbfecdb8066ec3e7ce4411d16840cdeed81eb058ccc4dd999a1eccad8), block 47243284 |
 | A published study (Renault Captur: 3 tracked, 1 proven, 2 refused) | `did:dkg:base:84532/0x5ea07ffddc58dd261102746e6651747e18429dbe/16` | [0x6f722e8f…2825](https://sepolia.basescan.org/tx/0x6f722e8f31beae015188695ad03450273098713ffb5fc66be5e205cd6f652825), block 47243591 |
+
+The app shows each asset's Shared Working Memory locator (`did:dkg:context-graph:…/_working_memory/…/15`). The same assets on-chain are the `did:dkg:base:84532/…/15` and `/16` UALs above, and the verifier and the calibration lookup accept either form.
 
 The app's **Publish to the DKG** button writes to **Shared Working Memory** (`dkg ka create ... --share`), which is instant and needs no gas. Moving an asset to Verifiable Memory is `dkg ka publish <asset> -c <context graph>`; it needs a little testnet ETH and storage acknowledgements from 3 core nodes, which on Sep 24 took several retries because one core node ran an incompatible protocol version. A `local` mode (`STREETPROOF_DKG_MODE=local`) writes the same Turtle to disk for development; **every result in this README came from the real node, not local mode.**
 
@@ -119,7 +155,7 @@ We tested on the sample clips of [VS13](https://slobodan.ucg.ac.me/science/vs13/
 
 **9 of 9 proven, mean error 4.5%, worst 7.1%.** On a real street the car's height isn't known, so the app assumes 1.5 m. With every test car assumed to be 1.5 m tall, the same clips give **5.4% mean, worst 11.6%**. For comparison, [Telraam](https://faq.telraam.net/en/article/14/speed-measurement-v85-explained), a citizen traffic-counting sensor, says its speed measurements may differ from real speeds by about 10%.
 
-**Why three passes.** Measured speed is proportional to the focal length, so we can re-score every possible choice of calibration clips without re-running detection. Calibrating on one clip averages 5.9% error across the 12 choices, but the worst choice (the Kia alone, which is what our first attempt used) gives 11.1% mean and 16.8% worst. Two or three passes average 5.1%, and the median protects against one bad pass.
+**Why three passes.** Measured speed is proportional to the focal length, so we can re-score every possible choice of calibration clips without re-running detection. Calibrating on one clip averages 5.9% error across the 12 choices, but the worst choice (the Kia alone, which is what our first attempt used) gives 11.1% mean and 16.8% worst. Two or three passes average 5.1%, More passes lower the average and cap one outlier, but an unlucky set of three can still be off by about 11% on average (worst clip 14.7%).
 
 **A bug we found and fixed.** YOLO sometimes boxed one car as both "car" and "truck", and the tracker counted it twice. Overlapping boxes are now merged before tracking, and every number above was re-run from scratch after the fix, including the calibration.
 
@@ -133,7 +169,15 @@ Reproduce it: put the VS13 sample clips in `samples/` (see below), start the app
 - **Head-on speeds depend on the vehicle's height.** A car 10% taller than assumed reads about 10% slow. Every vehicle in one study gets the same assumed height.
 - **The validation is head-on, one car per clip, at highway speeds.** Side-on measurement (curb marks or typical car length) is built and unit-tested but has not been checked against known speeds.
 - **Most studies stay in Shared Working Memory.** The calibration and one study are in Verifiable Memory on-chain; the rest are in Shared Working Memory on our testnet node, because moving each one on-chain takes gas and several minutes of network acknowledgements (see above).
-- **No blurring yet.** Frames go to Livepeer as they are; blurring faces and plates before sending is the next privacy step.
+- **No blurring yet.** Frames go to Livepeer as they are; blurring faces and plates before sending is the next privacy step. No frames, images, faces or plates go into any Knowledge Asset: a study asset holds the video's SHA-256, the street label, the method, the thresholds and each vehicle's result.
+
+## Where this goes
+
+- **Blur before sending:** faces and plates blurred on the resident's machine before any frame goes to Livepeer.
+- **Check side-on speeds against known speeds,** the way head-on is checked now.
+- **Longer recordings,** so one study reaches the 50 vehicles a spot speed study needs.
+- **A second party verifies:** a city or a journalist runs their own DKG node and checks a study without trusting our server.
+- **One real street:** a resident pilot in Toronto, from recording to the Councillor request.
 
 ## Prior art
 
@@ -160,7 +204,7 @@ Needs Java 25, ffmpeg, Python 3 with curl (for the reproduce script), and Node 2
 5. **Open it:** http://localhost:8080. The built frontend in `frontend/dist` is served by the app itself. To work on the frontend: `cd frontend`, `npm install`, `npm run dev` (Vite on port 5173, proxying `/api` to port 8080).
 6. **API:** see [docs/API.md](docs/API.md). City report: `GET /api/studies/{id}/report`.
 
-Studies are saved to disk (`~/streetproof-data/studies/*/state.json`) and reload after a restart. Tests: `./mvnw test`.
+Studies are saved to disk (`~/streetproof-data/studies/*/state.json`) and reload after a restart. Tests: `./mvnw test` (31 backend tests).
 
 ## Credits
 

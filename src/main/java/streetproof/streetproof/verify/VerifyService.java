@@ -3,6 +3,7 @@ package streetproof.streetproof.verify;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import streetproof.streetproof.ledger.KnowledgePublisher;
+import streetproof.streetproof.ledger.Locators;
 import streetproof.streetproof.study.Study;
 import streetproof.streetproof.study.StudyRepository;
 import streetproof.streetproof.util.Hashing;
@@ -41,6 +42,12 @@ public class VerifyService {
         Optional<Study> byVideo = repository.findByVideoSha(uploadedSha);
         if (ual != null && !ual.isBlank()) {
             Optional<String> recorded = publisher.recordedVideoSha256(ual.trim());
+            if (recorded.isEmpty()) {
+                recorded = repository.all().stream()
+                        .filter(s -> s.published() != null && Locators.sameAsset(ual, s.published().ual()))
+                        .findFirst()
+                        .flatMap(s -> publisher.recordedVideoSha256("streetproof-study-" + s.id()));
+            }
             if (recorded.isEmpty()) {
                 return new VerifyResult(VerifyResult.Outcome.NO_RECORD, "No published study was found at that locator.",
                         uploadedSha, null, ual, null, null);

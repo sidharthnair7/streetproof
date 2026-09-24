@@ -204,7 +204,7 @@ export function NewStudyScreen({ onStarted }: NewStudyScreenProps) {
               ))}
               <div className="flex gap-2.5">
                 <Info size={14} className="mt-0.5 shrink-0 text-[#2c7b6f]" />
-                <span>The video stays on this server. Only its SHA-256 fingerprint and the results are published.</span>
+                <span>Frames go to Livepeer for detection. The video file stays on this server, and only its SHA-256 fingerprint and the results are published.</span>
               </div>
             </div>
           </div>

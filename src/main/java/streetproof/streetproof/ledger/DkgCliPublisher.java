@@ -67,8 +67,7 @@ public class DkgCliPublisher implements KnowledgePublisher {
         } else {
             return index.recordedVideoSha256(ual);
         }
-        Matcher sha = SHA.matcher(query(sparql));
-        return sha.find() ? Optional.of(sha.group(1)) : Optional.empty();
+        return tryQuery(sparql).map(SHA::matcher).filter(Matcher::find).map(sha -> sha.group(1));
     }
 
     @Override
@@ -110,14 +109,14 @@ public class DkgCliPublisher implements KnowledgePublisher {
     public Optional<String> fetchCalibration(String reference) {
         if (reference.startsWith("did:dkg:") && reference.contains("/_working_memory/")) {
             String graph = reference.replace("/_working_memory/", "/_shared_memory/");
-            String direct = query("SELECT ?p ?o WHERE { GRAPH <" + graph + "> { ?s ?p ?o } }");
-            if (direct.contains(CalibrationAssets.NS + "focalPx")) {
-                return Optional.of(direct);
+            Optional<String> direct = tryQuery("SELECT ?p ?o WHERE { GRAPH <" + graph + "> { ?s ?p ?o } }");
+            if (direct.isPresent() && direct.get().contains(CalibrationAssets.NS + "focalPx")) {
+                return direct;
             }
         }
         Matcher named = Pattern.compile("calibration[-:]([A-Za-z0-9]+)").matcher(reference);
         String id = named.find() ? named.group(1) : index.calibrations().stream()
-                .filter(c -> reference.equals(c.ual()) || reference.equals(c.id()))
+                .filter(c -> Locators.sameAsset(reference, c.ual()) || reference.equals(c.id()))
                 .map(CalibrationRecord::id)
                 .findFirst().orElse(null);
         if (id == null) {
@@ -135,6 +134,14 @@ public class DkgCliPublisher implements KnowledgePublisher {
     @Override
     public String mode() {
         return "dkg-cli";
+    }
+
+    private Optional<String> tryQuery(String sparql) {
+        try {
+            return Optional.of(query(sparql));
+        } catch (IllegalStateException e) {
+            return Optional.empty();
+        }
     }
 
     private String query(String sparql) {

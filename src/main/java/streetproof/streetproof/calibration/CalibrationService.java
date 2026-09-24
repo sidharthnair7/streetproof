@@ -2,6 +2,7 @@ package streetproof.streetproof.calibration;
 
 import org.springframework.stereotype.Service;
 import streetproof.streetproof.config.StreetProofProperties;
+import streetproof.streetproof.ledger.Locators;
 import streetproof.streetproof.ledger.KnowledgePublisher;
 import streetproof.streetproof.ledger.PublishedRecord;
 import streetproof.streetproof.ledger.StudyAssetBuilder;
@@ -128,7 +129,7 @@ public class CalibrationService {
         int width = CalibrationAssets.numberAfter(text, "frameWidth").map(Double::intValue).orElse(0);
         int height = CalibrationAssets.numberAfter(text, "frameHeight").map(Double::intValue).orElse(0);
         Optional<CalibrationRecord> known = list().stream()
-                .filter(c -> reference.equals(c.ual()) || reference.equals(c.id()))
+                .filter(c -> Locators.sameAsset(reference, c.ual()) || reference.equals(c.id()))
                 .findFirst();
         return new CalibrationRecord(known.map(CalibrationRecord::id).orElse(reference),
                 known.map(CalibrationRecord::cameraLabel).orElse(null),
