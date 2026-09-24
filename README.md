@@ -64,7 +64,7 @@ Teal is Livepeer, purple is the OriginTrail DKG, everything else runs locally.
 
 Every screen reads the live API. There is no demo or fixture mode. Open http://localhost:8080 once the app is running.
 
-- **New study:** one-click VS13 test clips, or upload your own video. Calibrate by clicking two road marks a known distance apart on the real first frame, a typical car length, a calibration loaded from the DKG (same camera only), or none to see what gets refused.
+- **New study:** one-click VS13 test clips, upload your own video, or record straight from the device's camera (up to 60 s; browsers allow the camera on this computer's localhost or over HTTPS). Calibrate by clicking two road marks a known distance apart on the real first frame, a typical car length, a calibration loaded from the DKG (same camera only), or none to see what gets refused.
 - **Processing:** live status from the server: frames through Livepeer, calls made, and whether cached detections were reused.
 - **Results:** the annotated video (green proven, red refused with the reason), a check against Toronto's warrant, a gate ledger showing where each vehicle stopped, every vehicle with its crop, the speed histogram, **Publish to the DKG**, and the report for the city.
 - **Verify:** your browser computes the video's SHA-256. Only the fingerprint goes to the server, which reads the published fingerprint from the DKG by the study's locator. A "one byte changed" button shows a tampered copy failing.
@@ -176,6 +176,7 @@ Reproduce it: put the VS13 sample clips in `samples/` (see below), start the app
 - **Blur before sending:** faces and plates blurred on the resident's machine before any frame goes to Livepeer.
 - **Check side-on speeds against known speeds,** the way head-on is checked now.
 - **Longer recordings,** so one study reaches the 50 vehicles a spot speed study needs.
+- **Record from a phone in one step:** the in-browser recorder works on the computer running StreetProof and on any HTTPS deployment; serving it over HTTPS is what lets a resident's phone record and upload from one screen.
 - **A second party verifies:** a city or a journalist runs their own DKG node and checks a study without trusting our server.
 - **One real street:** a resident pilot in Toronto, from recording to the Councillor request.
 

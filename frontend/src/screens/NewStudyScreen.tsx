@@ -3,6 +3,7 @@ import { ArrowLeft, Check, CloudUpload, Database, FileVideo, Info, Loader2, Play
 import { api, short } from '../api'
 import type { CalibrationRecord, RunRequest, SampleClip, StudyView } from '../api'
 import { GATES } from '../gates'
+import { CameraRecorder } from '../components/CameraRecorder'
 
 interface NewStudyScreenProps {
   onStarted: (id: string) => void
@@ -178,7 +179,7 @@ export function NewStudyScreen({ onStarted }: NewStudyScreenProps) {
           </div>
 
           <div className="panel rounded-2xl p-6 space-y-4">
-            <h3 className="text-[15px] font-semibold text-[#18232a]">Or upload your own street</h3>
+            <h3 className="text-[15px] font-semibold text-[#18232a]">Or bring your own street</h3>
             <input ref={fileRef} type="file" accept="video/*" className="hidden" onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
             <button
               onClick={() => fileRef.current?.click()}
@@ -191,6 +192,7 @@ export function NewStudyScreen({ onStarted }: NewStudyScreenProps) {
               <div className="text-[14px] font-semibold text-[#18232a]">{busy === 'upload' ? 'Uploading…' : 'Choose a video'}</div>
               <div className="mt-1 text-[13px] text-[#556463]">Fixed camera · MP4 or MOV · up to 60 s</div>
             </button>
+            <CameraRecorder disabled={busy !== null} onRecorded={upload} />
             <div className="space-y-2.5 text-[12.5px] text-[#526463]">
               {[
                 ['Keep the camera still', 'A tripod, or a phone wedged in a window.'],
