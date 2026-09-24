@@ -21,15 +21,29 @@ public class IouTracker {
         this.minTrackFrames = minTrackFrames;
     }
 
+    public static final double DUPLICATE_IOU = 0.6;
+
+    public static List<Detection> suppressDuplicates(List<Detection> detections) {
+        List<Detection> byConfidence = detections.stream().sorted(Comparator.comparingDouble(Detection::confidence).reversed()).toList();
+        List<Detection> kept = new ArrayList<>();
+        for (Detection candidate : byConfidence) {
+            boolean duplicate = kept.stream().anyMatch(k -> k.box().iou(candidate.box()) >= DUPLICATE_IOU);
+            if (!duplicate) {
+                kept.add(candidate);
+            }
+        }
+        return kept;
+    }
+
     public List<Track> track(List<FrameDetections> frames, Set<String> labels) {
         List<Growing> active = new ArrayList<>();
         List<Growing> finished = new ArrayList<>();
         int nextId = 1;
         List<FrameDetections> ordered = frames.stream().sorted(Comparator.comparingInt(FrameDetections::index)).toList();
         for (FrameDetections frame : ordered) {
-            List<Detection> detections = frame.detections().stream()
+            List<Detection> detections = suppressDuplicates(frame.detections().stream()
                     .filter(d -> labels.isEmpty() || labels.contains(d.label()))
-                    .toList();
+                    .toList());
             List<Pair> pairs = new ArrayList<>();
             for (int t = 0; t < active.size(); t++) {
                 Growing track = active.get(t);

@@ -25,7 +25,7 @@ HEIGHTS = {
     "VWPassat_85": 1.473,
 }
 CALIBRATION_CLIPS = sorted(HEIGHTS)[:3]
-CAMERA = "VS13 roadside camera, 3 passes"
+CAMERA = "VS13 roadside camera, 3 passes, v2"
 
 
 def log(*parts):

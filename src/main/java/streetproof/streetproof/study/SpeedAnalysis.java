@@ -12,7 +12,8 @@ public record SpeedAnalysis(
         Map<String, Integer> refusalsByReason,
         List<Point> speedOverTime,
         Map<String, Integer> byDirection,
-        String headline
+        String headline,
+        Double p95Kmh
 ) {
 
     public record Bin(int fromKmh, int toKmh, int count) {

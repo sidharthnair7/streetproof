@@ -64,6 +64,8 @@ public class CityReportService {
 
         h.append("<section><h2>Measured speeds</h2>").append(histogram(analysis.histogram(), s.postedLimitKmh())).append("</section>");
 
+        h.append(warrant(s, analysis));
+
         h.append("<section><h2>Vehicles refused, and why</h2>");
         Map<String, Integer> refusals = analysis.refusalsByReason();
         if (refusals == null || refusals.isEmpty()) {
@@ -81,6 +83,10 @@ public class CityReportService {
 
         h.append("<section><h2>How the speeds were measured</h2><ol>");
         h.append("<li>Every frame (").append(fmt(study.sampleFps(), 0)).append(" per second) was sent to Livepeer's <code>yolo-detect</code> model, which boxes each vehicle.</li>");
+        if (study.view().conditionsNote() != null && study.view().conditionsNote().startsWith("Livepeer vision check")) {
+            h.append("<li>A Livepeer vision model (<code>nemotron-omni-vision</code>) looked at one frame for darkness, rain, glare or a blocked view. ")
+                    .append(esc(study.view().conditionsNote().replaceAll("[.\\s]+$", ""))).append(". It can only refuse footage, never add a speed.</li>");
+        }
         h.append("<li>Boxes were linked frame to frame into one track per vehicle.</li>");
         h.append("<li>").append(esc(calibrationLine(study))).append("</li>");
         h.append("<li>A fixed set of rules decided, for each vehicle, whether the evidence supports a speed: at least ")
@@ -89,7 +95,11 @@ public class CityReportService {
         h.append("</ol></section>");
 
         h.append("<section><h2>How to check this report</h2>");
-        h.append("<p>The study was published to the OriginTrail Decentralized Knowledge Graph, so anyone can check it without trusting us.</p><dl>");
+        if (study.published() != null) {
+            h.append("<p>The study was published as a Knowledge Asset to the OriginTrail Decentralized Knowledge Graph (Shared Working Memory on the V10 testnet, not yet registered on-chain). Anyone with the video and the record's locator can check that the video was not changed.</p><dl>");
+        } else {
+            h.append("<p>This study has not been published yet. Once it is, its fingerprint and results go to the OriginTrail Decentralized Knowledge Graph and anyone with the video can check it.</p><dl>");
+        }
         row(h, "Video fingerprint (SHA-256)", "<code>" + esc(study.videoSha256()) + "</code>");
         if (study.published() != null) {
             row(h, "Study record on the DKG", "<code>" + esc(study.published().ual()) + "</code>");
@@ -109,7 +119,9 @@ public class CityReportService {
 
         h.append("<section><h2>Limits of this study</h2><ul>");
         h.append("<li>Speeds come from ordinary video, not certified radar. This is evidence for asking the city for a formal study, not a basis for a ticket.</li>");
-        h.append("<li>Every speed depends on the camera calibration. ").append(esc(accuracyLine())).append("</li>");
+        boolean headOn = study.calibration() != null && study.calibration().mode() == Calibration.Mode.APPROACH;
+        h.append("<li>Every speed depends on the camera calibration. ")
+                .append(esc(headOn ? accuracyLine() : "This side-on method has not yet been checked against known speeds.")).append("</li>");
         if (study.calibration() != null && study.calibration().mode() == Calibration.Mode.APPROACH) {
             h.append("<li>Head-on measurement assumes a vehicle height of ").append(fmt(study.calibration().metres(), 2))
                     .append(" m. A vehicle 10% taller than that reads about 10% slow, and one 10% shorter reads about 10% fast.</li>");
@@ -135,11 +147,43 @@ public class CityReportService {
             f.append(", and <strong>").append(pct(s.shareOverLimit())).append("</strong> were over the limit");
         }
         f.append(".</p>");
-        if (s.vehiclesProven() < 30) {
+        if (s.vehiclesProven() < 50) {
             f.append("<p class=\"note\">Based on ").append(s.vehiclesProven()).append(s.vehiclesProven() == 1 ? " vehicle" : " vehicles")
-                    .append(". Speed studies usually want at least 30 to 100, so treat these figures as a first look.</p>");
+                    .append(". Spot speed studies usually use at least 50 vehicles, preferably 100, so treat these figures as a first look.</p>");
         }
         return f.toString();
+    }
+
+    private String warrant(StudySummary s, SpeedAnalysis analysis) {
+        StringBuilder w = new StringBuilder("<section><h2>Against a city's traffic calming rules</h2>");
+        w.append("<p>Toronto's 2023 Traffic Calming Policy is a concrete example. Speed humps are warranted on a block of at least 120 m ")
+                .append("when the 85th percentile is more than 8 km/h over the warrant speed limit, or the 95th percentile is more than 15 km/h over. ")
+                .append("The warrant speed limit is 30 km/h on local roads and 40 km/h on most collector roads. ")
+                .append("If the city finds a request not warranted, a three-year moratorium on new data collection applies, so a resident check first matters.</p>");
+        w.append("<table><thead><tr><th>Test</th><th class=\"num\">This study</th><th class=\"num\">Local road</th><th class=\"num\">Collector</th></tr></thead><tbody>");
+        warrantRow(w, "85th percentile", s.v85Kmh(), 30 + 8, 40 + 8);
+        warrantRow(w, "95th percentile", analysis.p95Kmh(), 30 + 15, 40 + 15);
+        w.append("</tbody></table>");
+        w.append("<p class=\"note\">Block length cannot be judged from video. ")
+                .append(s.vehiclesProven() < 50
+                        ? "This study measured " + s.vehiclesProven() + (s.vehiclesProven() == 1 ? " vehicle" : " vehicles")
+                        + ", fewer than the 50 (preferably 100) a spot speed study usually uses, so treat it as indicative."
+                        : "It meets the usual spot speed study sample of at least 50 vehicles.")
+                .append(" Sources: City of Toronto 2023 Traffic Calming Policy; Arizona State University POP Center, Speeding in Residential Areas, spot speed study guide.</p>");
+        return w.append("</section>").toString();
+    }
+
+    private static void warrantRow(StringBuilder w, String label, Double value, int local, int collector) {
+        w.append("<tr><td>").append(label).append("</td><td class=\"num\">").append(value == null ? "n/a" : fmt(value, 1) + " km/h")
+                .append("</td><td class=\"num\">").append(verdict(value, local)).append("</td><td class=\"num\">")
+                .append(verdict(value, collector)).append("</td></tr>");
+    }
+
+    private static String verdict(Double value, int threshold) {
+        if (value == null) {
+            return "over " + threshold + ": n/a";
+        }
+        return value > threshold ? "over " + threshold + ": <strong>yes</strong>" : "over " + threshold + ": no";
     }
 
     private String accuracyLine() {

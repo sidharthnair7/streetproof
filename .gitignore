@@ -41,3 +41,7 @@ build/
 /samples/*.mp4
 
 validation_result.json
+/config/
+*.tsbuildinfo
+frontend/vite.config.js
+frontend/vite.config.d.ts

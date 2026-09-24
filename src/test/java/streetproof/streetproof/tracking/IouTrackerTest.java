@@ -52,4 +52,18 @@ class IouTrackerTest {
         }
         assertThat(tracker.track(frames, Set.of("car", "truck"))).isEmpty();
     }
+
+    @Test
+    void oneCarBoxedAsBothCarAndTruckIsOneVehicle() {
+        List<FrameDetections> frames = new ArrayList<>();
+        for (int i = 0; i < 12; i++) {
+            double x = 100 + i * 20;
+            frames.add(new FrameDetections(i + 1, i / 15.0, List.of(
+                    new Detection("car", 0.9, new BoundingBox(x, 300, x + 120, 380)),
+                    new Detection("truck", 0.6, new BoundingBox(x + 2, 298, x + 121, 381)))));
+        }
+        var tracks = new IouTracker(0.2, 3, 3).track(frames, Set.of("car", "truck"));
+        assertThat(tracks).hasSize(1);
+        assertThat(tracks.getFirst().label()).isEqualTo("car");
+    }
 }

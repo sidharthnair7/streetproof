@@ -93,10 +93,12 @@ public class LivepeerClient {
         arguments.put("prompt", question);
         arguments.put("timeout", 30);
         JsonNode result = callTool("run_capability", arguments);
-        for (String field : List.of("text", "output", "answer", "result")) {
-            JsonNode value = result.path(field);
-            if (value.isString()) {
-                return value.asString();
+        for (JsonNode node : List.of(result, result.path("result"), result.path("output"))) {
+            for (String field : List.of("text", "output", "answer", "result")) {
+                JsonNode value = node.path(field);
+                if (value.isString()) {
+                    return value.asString();
+                }
             }
         }
         return result.toString();

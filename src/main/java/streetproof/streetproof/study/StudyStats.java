@@ -56,7 +56,7 @@ public final class StudyStats {
         }
         overTime.sort(Comparator.comparingDouble(SpeedAnalysis.Point::timeSeconds));
         return new SpeedAnalysis(summary, mean, max, overBy10, histogram(speeds), refusals, overTime, directions,
-                headline(summary));
+                headline(summary), percentile(speeds, 95));
     }
 
     private static List<SpeedAnalysis.Bin> histogram(List<Double> speeds) {

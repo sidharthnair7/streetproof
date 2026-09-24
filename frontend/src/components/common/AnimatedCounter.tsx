@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface AnimatedCounterProps {
   value: number | string
@@ -19,26 +19,32 @@ export function AnimatedCounter({
 }: AnimatedCounterProps) {
   const numericValue = typeof value === 'string' ? parseFloat(value.replace(/[^0-9.]/g, '')) || 0 : value
   const [displayValue, setDisplayValue] = useState(0)
+  const shown = useRef(0)
 
   useEffect(() => {
+    let frame = 0
     let startTime: number | null = null
-    const startValue = displayValue
+    const startValue = shown.current
 
     const step = (timestamp: number) => {
-      if (!startTime) startTime = timestamp
+      if (startTime === null) startTime = timestamp
       const progress = Math.min((timestamp - startTime) / duration, 1)
-      // Ease out cubic
-      const easeProgress = 1 - Math.pow(1 - progress, 3)
-      const current = startValue + (numericValue - startValue) * easeProgress
-      setDisplayValue(current)
-
-      if (progress < 1) {
-        requestAnimationFrame(step)
-      }
+      const eased = 1 - Math.pow(1 - progress, 3)
+      shown.current = startValue + (numericValue - startValue) * eased
+      setDisplayValue(shown.current)
+      if (progress < 1) frame = requestAnimationFrame(step)
     }
 
-    const frame = requestAnimationFrame(step)
-    return () => cancelAnimationFrame(frame)
+    frame = requestAnimationFrame(step)
+    const settle = window.setTimeout(() => {
+      cancelAnimationFrame(frame)
+      shown.current = numericValue
+      setDisplayValue(numericValue)
+    }, duration + 80)
+    return () => {
+      cancelAnimationFrame(frame)
+      window.clearTimeout(settle)
+    }
   }, [numericValue, duration])
 
   return (

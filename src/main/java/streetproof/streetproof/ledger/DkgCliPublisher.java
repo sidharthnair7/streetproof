@@ -108,6 +108,13 @@ public class DkgCliPublisher implements KnowledgePublisher {
 
     @Override
     public Optional<String> fetchCalibration(String reference) {
+        if (reference.startsWith("did:dkg:") && reference.contains("/_working_memory/")) {
+            String graph = reference.replace("/_working_memory/", "/_shared_memory/");
+            String direct = query("SELECT ?p ?o WHERE { GRAPH <" + graph + "> { ?s ?p ?o } }");
+            if (direct.contains(CalibrationAssets.NS + "focalPx")) {
+                return Optional.of(direct);
+            }
+        }
         Matcher named = Pattern.compile("calibration[-:]([A-Za-z0-9]+)").matcher(reference);
         String id = named.find() ? named.group(1) : index.calibrations().stream()
                 .filter(c -> reference.equals(c.ual()) || reference.equals(c.id()))

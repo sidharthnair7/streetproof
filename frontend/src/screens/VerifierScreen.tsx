@@ -1,182 +1,163 @@
-import { useState } from 'react'
-import { Screen } from '../types/study'
+import { useEffect, useRef, useState } from 'react'
+import { Check, FileVideo, Hash, KeyRound, Loader2, Lock, ShieldAlert, ShieldCheck, Upload, X } from 'lucide-react'
 import { TiltCard } from '../components/common/TiltCard'
-import { KeyRound, Upload, Check, X, ArrowLeft, ShieldCheck, FileCheck, Hash, Lock } from 'lucide-react'
+import { api, clipName, sha256OfFile, short } from '../api'
+import type { StudyView, VerifyResult } from '../api'
 
 interface VerifierScreenProps {
-  setScreen: (s: Screen) => void
+  initialUal: string | null
 }
 
-export function VerifierScreen({ setScreen }: VerifierScreenProps) {
-  const [fileChecked, setFileChecked] = useState(false)
-  const [isVerifying, setIsVerifying] = useState(false)
-  const [hashProgress, setHashProgress] = useState(0)
+export function VerifierScreen({ initialUal }: VerifierScreenProps) {
+  const [ual, setUal] = useState(initialUal ?? '')
+  const [published, setPublished] = useState<StudyView[]>([])
+  const [file, setFile] = useState<File | null>(null)
+  const [hash, setHash] = useState<string | null>(null)
+  const [tampered, setTampered] = useState(false)
+  const [busy, setBusy] = useState<string | null>(null)
+  const [result, setResult] = useState<VerifyResult | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
 
-  const handleSimulateVerification = () => {
-    setIsVerifying(true)
-    setHashProgress(0)
+  useEffect(() => {
+    api.studies().then((all) => {
+      const list = all.filter((s) => s.published)
+      setPublished(list)
+      if (!initialUal && list[0]) setUal(list[0].published!.ual)
+    }).catch(() => undefined)
+  }, [initialUal])
 
-    const timer = setInterval(() => {
-      setHashProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(timer)
-          setIsVerifying(false)
-          setFileChecked(true)
-          return 100
-        }
-        return prev + 20
-      })
-    }, 120)
+  const check = async (f: File, tamper: boolean) => {
+    setError(null)
+    setResult(null)
+    setBusy(tamper ? 'tamper' : 'hash')
+    try {
+      const sha = await sha256OfFile(f, tamper)
+      setHash(sha)
+      setTampered(tamper)
+      setBusy('dkg')
+      setResult(await api.verifyHash(sha, ual.trim() || null))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusy(null)
+    }
   }
 
+  const chosen = published.find((s) => s.published?.ual === ual.trim())
+  const outcome = result?.outcome
+
   return (
-    <div className="mx-auto max-w-[840px] space-y-7">
-      {/* Title */}
+    <div className="mx-auto max-w-[880px] space-y-7">
       <div>
-        <div className="eyebrow mb-2">Public Forensic Verifier / No Account Required</div>
+        <div className="eyebrow mb-2">Public verifier / no account needed</div>
         <h2 className="display text-4xl leading-tight md:text-5xl text-[#18232a]">
-          Can this study
+          Is this the video
           <br />
-          <em className="text-[#126b6a]">be independently verified?</em>
+          <em className="text-[#126b6a]">the study measured?</em>
         </h2>
-        <p className="mt-3 max-w-[560px] text-[13px] leading-6 text-[#617473]">
-          A city engineer, local journalist, or resident can drag in the raw video file they received to test the cryptographic hash against the immutable OriginTrail Knowledge Asset.
+        <p className="mt-3 max-w-[600px] text-[13px] leading-6 text-[#617473]">
+          A city engineer, journalist or neighbour picks the video they were given. Your browser computes its SHA-256 fingerprint. Only the fingerprint goes to the StreetProof server, which looks up the published study on the OriginTrail DKG and compares.
         </p>
       </div>
 
-      {/* 3D Tilt Card with Holographic Cryptographic Authenticity */}
-      <TiltCard
-        maxTilt={7}
-        className="border-[#cde3dd] bg-gradient-to-br from-white/95 via-[#f9fcfb] to-[#edf6f3] shadow-xl p-7 md:p-8"
-      >
-        <div className="mb-6 flex items-start justify-between border-b border-[#e5ebea] pb-5">
+      <TiltCard maxTilt={5} className="border-[#cde3dd] bg-gradient-to-br from-white/95 via-[#f9fcfb] to-[#edf6f3] shadow-xl p-7 md:p-8">
+        <div className="space-y-5">
           <div>
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="live-dot h-2 w-2 rounded-full bg-[#3bb9a3]" />
-              <span className="mono text-[10px] uppercase tracking-wider text-[#21786c]">
-                OriginTrail DKG Asset Verified
-              </span>
+            <div className="eyebrow mb-2 flex items-center gap-2"><Lock size={11} className="text-[#3bb9a3]" /> Study on the DKG</div>
+            {published.length > 0 && (
+              <select value={chosen ? ual : ''} onChange={(e) => setUal(e.target.value)} className="mb-2 w-full rounded-lg border border-[#dce5e3] bg-white px-3 py-2 text-[12px]">
+                <option value="">Paste a locator below, or pick a published study</option>
+                {published.map((s) => (
+                  <option key={s.id} value={s.published!.ual}>{s.streetLabel || clipName(s.sourceName)} · {clipName(s.sourceName)} · {s.id}</option>
+                ))}
+              </select>
+            )}
+            <input value={ual} onChange={(e) => setUal(e.target.value)} placeholder="did:dkg:context-graph:…" className="mono w-full rounded-lg border border-[#dce5e3] bg-white px-3 py-2 text-[11px]" />
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-xl border border-[#d6e5e1] bg-[#f8fbf9] p-4">
+              <div className="eyebrow mb-1.5 text-[#21786c]">Fingerprint on the DKG</div>
+              <div className="break-all mono text-[11px] font-bold leading-relaxed text-[#18232a]">
+                {result?.recordedSha256 ?? (chosen ? chosen.videoSha256 : '–')}
+              </div>
+              <div className="mt-2 text-[10px] text-[#6b8280]">{result?.recordedSha256 ? 'read from the Knowledge Asset just now' : chosen ? 'expected, from the study record' : 'pick or paste a study'}</div>
             </div>
-            <h3 className="text-[17px] font-bold text-[#18232a]">
-              SP-2409-021 · Cedar Avenue Speed Study
-            </h3>
-            <div className="mt-1 flex items-center gap-1.5 mono text-[10px] text-[#6b8280]">
-              <Lock size={12} className="text-[#3bb9a3]" />
-              <span>UAL: did:dkg:otp:2043/0x8d4d4e7c9ac44c1d2e8b17f21c</span>
+            <div className="flex flex-col justify-between rounded-xl border border-[#d6e5e1] bg-[#f8fbf9] p-4">
+              <div className="eyebrow mb-1.5 text-[#21786c]">Fingerprint of your video</div>
+              {hash ? (
+                <div className={`break-all mono text-[11px] font-bold leading-relaxed ${outcome === 'MATCH' ? 'text-[#1f7364]' : outcome ? 'text-[#b1462f]' : 'text-[#18232a]'}`}>{hash}</div>
+              ) : busy ? (
+                <div className="flex items-center gap-2 mono text-[10px] text-[#26796c]"><Loader2 size={12} className="animate-spin" /> hashing in your browser…</div>
+              ) : (
+                <div className="text-[11px] text-[#6b8280]">No video chosen yet</div>
+              )}
+              <div className="mt-2 text-[10px] text-[#6b8280]">{file ? `${file.name}${tampered ? ' with one byte changed' : ''}` : ''}</div>
             </div>
           </div>
 
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#def3eb] text-[#227969] shadow-sm">
-            <KeyRound size={22} />
-          </span>
-        </div>
-
-        {/* SHA-256 Comparison Matrix */}
-        <div className="grid gap-4 py-3 md:grid-cols-2">
-          <div className="rounded-xl border border-[#d6e5e1] bg-[#f8fbf9] p-4">
-            <div className="eyebrow mb-1.5 text-[#21786c]">Published On-Chain Hash</div>
-            <div className="break-all mono text-[11px] font-bold text-[#18232a] leading-relaxed">
-              sha256: 8d4d4e7c9ac44c1d2e8b17f21c5f8832a0b12e911244
-            </div>
-            <div className="mt-2 text-[10px] text-[#6b8280]">Committed 24 Sep 2026 · Block 4,189,203</div>
-          </div>
-
-          <div className="rounded-xl border border-[#d6e5e1] bg-[#f8fbf9] p-4 flex flex-col justify-between">
-            <div className="eyebrow mb-1.5 text-[#21786c]">Supplied Video Checksum</div>
-            {fileChecked ? (
-              <div className="break-all mono text-[11px] font-bold text-[#1f7364] leading-relaxed">
-                sha256: 8d4d4e7c9ac44c1d2e8b17f21c5f8832a0b12e911244
-              </div>
-            ) : isVerifying ? (
-              <div className="space-y-1.5">
-                <div className="mono text-[10px] text-[#26796c]">Hashing video frames ({hashProgress}%)...</div>
-                <div className="h-1.5 w-full bg-[#dbe8e4] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-[#3bb9a3] transition-all duration-150"
-                    style={{ width: `${hashProgress}%` }}
-                  />
-                </div>
-              </div>
-            ) : (
-              <button
-                onClick={handleSimulateVerification}
-                className="btn btn-light w-full justify-start text-[11px] shadow-sm"
-              >
-                <Upload size={13} /> Select Local Video to Hash & Match
+          <input ref={fileRef} type="file" accept="video/*" className="hidden" onChange={(e) => {
+            const f = e.target.files?.[0]
+            if (f) {
+              setFile(f)
+              check(f, false)
+            }
+          }} />
+          <div className="flex flex-wrap gap-2.5">
+            <button onClick={() => fileRef.current?.click()} disabled={busy !== null} className="btn btn-dark shadow-md">
+              {busy === 'hash' || busy === 'dkg' ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+              <span>{file ? 'Choose another video' : 'Choose the video to check'}</span>
+            </button>
+            {file && (
+              <button onClick={() => check(file, true)} disabled={busy !== null} className="btn btn-light">
+                {busy === 'tamper' ? <Loader2 size={14} className="animate-spin" /> : <FileVideo size={14} />}
+                <span>Try it with one byte changed</span>
               </button>
             )}
-            <div className="mt-2 text-[10px] text-[#6b8280]">
-              {fileChecked ? 'Exact match confirmed' : 'Awaiting video payload'}
-            </div>
           </div>
-        </div>
 
-        {/* Verification Checklist */}
-        <div className="my-6 space-y-2.5">
-          {[
-            ['Video SHA-256 Bitstream Hash Matches', fileChecked],
-            ['Homography 4-Point Calibration Matrix Unaltered', true],
-            ['6 Deterministic Gate Rules & Thresholds Intact', true],
-            ['32 Proven Speeds & Refusal Ledger Cryptographically Sealed', true],
-          ].map(([label, ok]) => (
-            <div
-              key={label as string}
-              className="flex items-center justify-between rounded-xl bg-white/75 border border-[#e2ece9] px-4 py-3"
-            >
-              <span className="flex items-center gap-2.5 text-[12px] font-semibold text-[#18232a]">
-                <span
-                  className={`grid h-6 w-6 place-items-center rounded-full ${
-                    ok ? 'bg-[#d8f1e7] text-[#257968]' : 'bg-[#fff0df] text-[#ba6b2f]'
-                  }`}
-                >
-                  {ok ? <Check size={14} /> : <X size={14} />}
-                </span>
-                {label as string}
-              </span>
+          {error && <div className="rounded-xl border border-[#f1c8bd] bg-[#fdf1ee] px-4 py-3 text-[12px] text-[#9b3d2a]">{error}</div>}
 
-              <span
-                className={`mono text-[9px] font-bold uppercase tracking-wider ${
-                  ok ? 'text-[#2b7e6d]' : 'text-[#b46a35]'
-                }`}
-              >
-                {ok ? 'CONFIRMED' : 'WAITING'}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* Result Message Card */}
-        <div
-          className={`rounded-xl p-4 text-[12px] leading-relaxed ${
-            fileChecked
-              ? 'bg-[#dff3eb] text-[#1c6457] border border-[#b2d9cd]'
-              : 'bg-[#f1f6f4] text-[#667776] border border-[#d6e5e1]'
-          }`}
-        >
-          {fileChecked ? (
-            <div className="flex items-start gap-2">
-              <ShieldCheck size={18} className="shrink-0 text-[#217769] mt-0.5" />
-              <span>
-                <strong>Cryptographic Consensus Verified:</strong> The video you provided matches the immutable DKG publication. The speeds, refusal reasons, and calibration parameters are authentic and unaltered since publication.
-              </span>
-            </div>
-          ) : (
-            <div className="flex items-start gap-2">
-              <Hash size={16} className="shrink-0 text-[#607775] mt-0.5" />
-              <span>
-                Provide the local MP4 file to run client-side SHA-256 hashing. All math executes locally inside your browser; no video is ever uploaded or transmitted.
-              </span>
+          {result && (
+            <div className={`rounded-xl border p-4 text-[12px] leading-relaxed ${outcome === 'MATCH' ? 'border-[#b2d9cd] bg-[#dff3eb] text-[#1c6457]' : outcome === 'MISMATCH' ? 'border-[#f1c8bd] bg-[#fdf1ee] text-[#9b3d2a]' : 'border-[#e3d9c5] bg-[#fbf6ec] text-[#7a5d2c]'}`}>
+              <div className="flex items-start gap-2.5">
+                {outcome === 'MATCH' ? <ShieldCheck size={18} className="mt-0.5 shrink-0" /> : outcome === 'MISMATCH' ? <ShieldAlert size={18} className="mt-0.5 shrink-0" /> : <Hash size={18} className="mt-0.5 shrink-0" />}
+                <div>
+                  <div className="mono text-[11px] font-bold tracking-wider">{outcome}</div>
+                  <div>{result.message}</div>
+                  {result.summary && (
+                    <div className="mt-2 text-[11px]">
+                      The study it matches: {result.summary.vehiclesProven} of {result.summary.vehiclesObserved} vehicles proven{result.summary.v85Kmh != null ? `, 85th percentile ${result.summary.v85Kmh.toFixed(1)} km/h` : ''}.
+                    </div>
+                  )}
+                  {result.ual && <div className="mono mt-2 break-all text-[10px] opacity-80"><KeyRound size={10} className="mr-1 inline" />{short(result.ual, 40, 16)}</div>}
+                </div>
+              </div>
             </div>
           )}
+
+          <div className="space-y-2">
+            {[
+              ['The video is byte-for-byte the one that was measured', outcome === 'MATCH' ? true : outcome ? false : null],
+              ['The fingerprint was read from the DKG, not from this website', result?.recordedSha256 && result.ual?.startsWith('did:dkg:') ? true : null],
+              ['Your video never left your computer', hash ? true : null],
+            ].map(([label, ok]) => (
+              <div key={label as string} className="flex items-center justify-between rounded-xl border border-[#e2ece9] bg-white/75 px-4 py-2.5">
+                <span className="flex items-center gap-2.5 text-[12px] font-semibold text-[#18232a]">
+                  <span className={`grid h-6 w-6 place-items-center rounded-full ${ok === true ? 'bg-[#d8f1e7] text-[#257968]' : ok === false ? 'bg-[#fbe4df] text-[#b1462f]' : 'bg-[#eef3f2] text-[#9cb0ae]'}`}>
+                    {ok === true ? <Check size={14} /> : ok === false ? <X size={14} /> : <Hash size={12} />}
+                  </span>
+                  {label as string}
+                </span>
+                <span className={`mono text-[9px] font-bold uppercase tracking-wider ${ok === true ? 'text-[#2b7e6d]' : ok === false ? 'text-[#b1462f]' : 'text-[#9cb0ae]'}`}>
+                  {ok === true ? 'confirmed' : ok === false ? 'failed' : 'waiting'}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </TiltCard>
-
-      {/* Back button */}
-      <div>
-        <button onClick={() => setScreen('results')} className="btn btn-light shadow-sm">
-          <ArrowLeft size={14} /> Back to Cedar Avenue Study
-        </button>
-      </div>
     </div>
   )
 }

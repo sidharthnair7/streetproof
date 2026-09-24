@@ -45,13 +45,55 @@ public class Study {
     private volatile String calibrationUal;
 
     public Study(String id, String sourceName, Path dir, Path video, String videoSha256, VideoInfo videoInfo) {
+        this(id, Instant.now(), sourceName, dir, video, videoSha256, videoInfo);
+    }
+
+    private Study(String id, Instant createdAt, String sourceName, Path dir, Path video, String videoSha256, VideoInfo videoInfo) {
         this.id = id;
-        this.createdAt = Instant.now();
+        this.createdAt = createdAt;
         this.sourceName = sourceName;
         this.dir = dir;
         this.video = video;
         this.videoSha256 = videoSha256;
         this.videoInfo = videoInfo;
+    }
+
+    public StudySnapshot snapshot() {
+        return new StudySnapshot(id, createdAt, sourceName, video.getFileName().toString(), videoSha256, videoInfo, status,
+                calibration, calibrationUal, postedLimitKmh, sampleFps, knownKmh, streetLabel, group, frameWidth, frameHeight,
+                framesTotal.get(), framesDone.get(), livepeerCalls.get(), estimatedCostUsd.sum(), usedCachedDetections,
+                conditionsNote, tracks, verdicts, analysis, published, error);
+    }
+
+    public static Study restore(StudySnapshot s, Path dir) {
+        Study study = new Study(s.id(), s.createdAt() == null ? Instant.now() : s.createdAt(), s.sourceName(), dir,
+                dir.resolve(s.videoFile()), s.videoSha256(), s.videoInfo());
+        study.calibration = s.calibration();
+        study.calibrationUal = s.calibrationUal();
+        study.postedLimitKmh = s.postedLimitKmh();
+        study.sampleFps = s.sampleFps();
+        study.knownKmh = s.knownKmh();
+        study.streetLabel = s.streetLabel();
+        study.group = s.group() == null ? "study" : s.group();
+        study.frameWidth = s.frameWidth();
+        study.frameHeight = s.frameHeight();
+        study.framesTotal.set(s.framesTotal());
+        study.framesDone.set(s.framesDone());
+        study.livepeerCalls.set(s.livepeerCalls());
+        study.estimatedCostUsd.add(s.estimatedCostUsd());
+        study.usedCachedDetections = s.usedCachedDetections();
+        study.conditionsNote = s.conditionsNote();
+        study.tracks = s.tracks() == null ? List.of() : List.copyOf(s.tracks());
+        study.verdicts = s.verdicts() == null ? List.of() : List.copyOf(s.verdicts());
+        study.analysis = s.analysis();
+        study.published = s.published();
+        study.error = s.error();
+        boolean interrupted = s.status() != StudyStatus.DONE && s.status() != StudyStatus.FAILED && s.status() != StudyStatus.UPLOADED;
+        study.status = interrupted ? StudyStatus.FAILED : s.status();
+        if (interrupted) {
+            study.error = "The server restarted while this study was running. Run it again.";
+        }
+        return study;
     }
 
     public String id() {

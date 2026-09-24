@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeft,
   ArrowRight,
   BarChart3,
-  Bell,
   Check,
   CircleHelp,
   ClipboardCheck,
@@ -32,51 +31,24 @@ import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
 
-import { Screen, Study } from './types/study'
+import { Screen } from './types/study'
+import { api, clipName, short } from './api'
+import type { Health, StudyView, ValidationReport } from './api'
+import { GATES } from './gates'
 import { OverviewScreen } from './screens/OverviewScreen'
 import { NewStudyScreen } from './screens/NewStudyScreen'
 import { ProcessingScreen } from './screens/ProcessingScreen'
 import { ResultsScreen } from './screens/ResultsScreen'
 import { VerifierScreen } from './screens/VerifierScreen'
+import { AccuracyScreen } from './screens/AccuracyScreen'
 import GridDistortion from './components/reactbits/GridDistortion'
 import DotField from './components/reactbits/DotField'
+import { FieldScreen } from './screens/FieldScreen'
 
 gsap.registerPlugin(ScrollTrigger)
 
-const initialStudies: Study[] = [
-  {
-    id: 'SP-2409-021',
-    street: 'Cedar Avenue',
-    date: '24 Sep 2026',
-    vehicles: '48',
-    proven: '32',
-    p85: '42.8 km/h',
-    status: 'Verified',
-    speedLimitKmh: 30,
-    ual: 'did:dkg:otp:2043/0x8d4d4e7c9ac44c1d2e8b17f21c',
-    videoHash: 'sha256:8d4d4e7c9ac4...b17f21c',
-  },
-  {
-    id: 'SP-2409-018',
-    street: 'Marlow Crescent',
-    date: '22 Sep 2026',
-    vehicles: '36',
-    proven: '25',
-    p85: '38.4 km/h',
-    status: 'Verified',
-    speedLimitKmh: 30,
-  },
-  {
-    id: 'SP-2409-011',
-    street: 'Northgate Road',
-    date: '18 Sep 2026',
-    vehicles: '—',
-    proven: '—',
-    p85: '—',
-    status: 'Draft',
-    speedLimitKmh: 40,
-  },
-]
+const SCREENS: Screen[] = ['landing', 'overview', 'new-study', 'processing', 'results', 'verifier', 'field', 'accuracy']
+
 
 export function TelemetryCanvas() {
   const ref = useRef<HTMLCanvasElement>(null)
@@ -212,10 +184,12 @@ function Logo({ onClick }: { onClick?: () => void }) {
 function Sidebar({ screen, setScreen }: { screen: Screen; setScreen: (s: Screen) => void }) {
   const links = [
     { id: 'landing' as Screen, label: 'Public Portal', icon: Globe },
-    { id: 'overview' as Screen, label: 'Workspace Pulse', icon: Home },
+    { id: 'overview' as Screen, label: 'Workspace', icon: Home },
     { id: 'new-study' as Screen, label: 'New study', icon: Plus },
-    { id: 'results' as Screen, label: 'Cedar Ave Study', icon: BarChart3 },
-    { id: 'verifier' as Screen, label: 'Verify a study', icon: ShieldCheck },
+    { id: 'results' as Screen, label: 'Current study', icon: BarChart3 },
+    { id: 'field' as Screen, label: 'Every detection (3D)', icon: Layers3 },
+    { id: 'accuracy' as Screen, label: 'Accuracy', icon: Target },
+    { id: 'verifier' as Screen, label: 'Verify a video', icon: ShieldCheck },
   ]
 
   return (
@@ -245,24 +219,6 @@ function Sidebar({ screen, setScreen }: { screen: Screen; setScreen: (s: Screen)
         ))}
       </nav>
 
-      <div className="sidebar-label eyebrow mb-3 mt-8 px-2">Resources</div>
-      <div className="space-y-1">
-        <button
-          onClick={() => setScreen('results')}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[12px] text-[#718081] hover:bg-[#f0f5f3] text-left"
-        >
-          <ClipboardCheck size={16} />
-          <span className="sidebar-label">Method & gates</span>
-        </button>
-        <button
-          onClick={() => setScreen('verifier')}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[12px] text-[#718081] hover:bg-[#f0f5f3] text-left"
-        >
-          <CircleHelp size={16} />
-          <span className="sidebar-label">DKG provenance</span>
-        </button>
-      </div>
-
       <div className="sidebar-footer mt-auto border-t border-[#dce5e3] pt-4">
         <div className="flex items-center gap-3">
           <div className="grid h-8 w-8 place-items-center rounded-full bg-[#dceee8] text-[11px] font-bold text-[#266963]">
@@ -287,6 +243,8 @@ function Topbar({ screen, setScreen }: { screen: Screen; setScreen: (s: Screen) 
     processing: 'Processing Evidence',
     results: 'Study Results & Evidence',
     verifier: 'Cryptographic Verifier',
+    field: 'Every detection',
+    accuracy: 'Accuracy',
   }
 
   return (
@@ -307,10 +265,7 @@ function Topbar({ screen, setScreen }: { screen: Screen; setScreen: (s: Screen) 
       </div>
 
       <div className="flex items-center gap-3">
-        <div className="hidden items-center gap-2 rounded-full border border-[#dce5e3] bg-white px-3 py-1.5 text-[11px] text-[#5e7170] sm:flex shadow-sm">
-          <span className="live-dot h-2 w-2 rounded-full bg-[#3db595]" />
-          <span>Local workspace synced</span>
-        </div>
+        <HealthPill />
         <button
           onClick={() => setScreen('landing')}
           className="rounded-lg border border-[#dce5e3] bg-white p-2 text-[#718081] hover:bg-[#f0f5f3]"
@@ -318,12 +273,44 @@ function Topbar({ screen, setScreen }: { screen: Screen; setScreen: (s: Screen) 
         >
           <Globe size={16} />
         </button>
-        <button className="rounded-lg border border-[#dce5e3] bg-white p-2 text-[#718081] hover:bg-[#f0f5f3]">
-          <Bell size={16} />
-        </button>
       </div>
     </header>
   )
+}
+
+function HealthPill() {
+  const [health, setHealth] = useState<Health | null>(null)
+  const [down, setDown] = useState(false)
+  useEffect(() => {
+    api.health().then(setHealth).catch(() => setDown(true))
+  }, [])
+  const text = down ? 'StreetProof server offline' : !health ? 'Connecting…' : health.knowledgeMode === 'dkg-cli' ? 'Livepeer + OriginTrail DKG node' : 'Livepeer + local ledger (not the DKG)'
+  const dot = down ? 'bg-[#d65a4f]' : health?.knowledgeMode === 'dkg-cli' ? 'bg-[#3db595]' : 'bg-[#e0a24a]'
+  return (
+    <div className="hidden items-center gap-2 rounded-full border border-[#dce5e3] bg-white px-3 py-1.5 text-[11px] text-[#5e7170] sm:flex shadow-sm">
+      <span className={`live-dot h-2 w-2 rounded-full ${dot}`} />
+      <span>{text}</span>
+    </div>
+  )
+}
+
+function useShowcase() {
+  const [study, setStudy] = useState<StudyView | null>(null)
+  const [validation, setValidation] = useState<ValidationReport | null>(null)
+  const [detections, setDetections] = useState<number | null>(null)
+  const [vehicles, setVehicles] = useState<number | null>(null)
+  useEffect(() => {
+    api.studies().then((all) => {
+      const done = all.filter((s) => s.status === 'DONE' && (s.summary?.vehiclesProven ?? 0) > 0)
+      setStudy(done.find((s) => s.published) ?? done[0] ?? null)
+    }).catch(() => undefined)
+    api.validation().then(setValidation).catch(() => undefined)
+    api.field().then((f) => {
+      setDetections(f.detections)
+      setVehicles(f.vehicles.length)
+    }).catch(() => undefined)
+  }, [])
+  return { study, validation, detections, vehicles }
 }
 
 function MotionDirector() {
@@ -366,14 +353,8 @@ function MotionDirector() {
 }
 
 function Landing({ setScreen }: { setScreen: (s: Screen) => void }) {
-  const gates = [
-    ['01', 'Road plane', '4-point homography', 'No calibrated plane. No speed.'],
-    ['02', 'Timecode', 'locked 30fps metadata', 'No reliable time. No speed.'],
-    ['03', 'Trajectory', '12 frames / 8 metres', 'Too little movement is refused.'],
-    ['04', 'Zone boundary', 'inside calibrated region', 'No extrapolation beyond proof.'],
-    ['05', 'Consistency', '<15% window spread', 'Noise never becomes a headline.'],
-    ['06', 'Plausibility', '3—200 km/h', 'Physics gets the final word.'],
-  ]
+  const gates = GATES.filter((g) => g.code !== 'NO_FRAME_RATE').map((g, i) => [String(i + 1).padStart(2, '0'), g.title, g.rule, g.why])
+  const { study: showcase, validation, detections, vehicles } = useShowcase()
 
   return (
     <div className="landing-page">
@@ -385,7 +366,7 @@ function Landing({ setScreen }: { setScreen: (s: Screen) => void }) {
           <Logo onClick={() => setScreen('overview')} />
           <span className="hidden h-5 w-px bg-white/15 sm:block" />
           <span className="hidden items-center gap-2 mono text-[9px] uppercase tracking-[.16em] text-[#94afa9] sm:flex">
-            <span className="live-dot h-1.5 w-1.5 rounded-full bg-[#9ce3d2]" /> Civic proof engine v1.2
+            <span className="live-dot h-1.5 w-1.5 rounded-full bg-[#9ce3d2]" /> Livepeer + OriginTrail DKG
           </span>
         </div>
         <nav className="hidden items-center gap-7 lg:flex">
@@ -445,7 +426,7 @@ function Landing({ setScreen }: { setScreen: (s: Screen) => void }) {
               className="eyebrow flex items-center gap-2 text-[#83bdb1]"
             >
               <span className="live-dot h-1.5 w-1.5 rounded-full bg-[#9ce3d2]" /> Civic evidence platform ·
-              zero unverified claims
+              every number checkable
             </motion.div>
             <motion.h1
               initial={{ opacity: 0, y: 24 }}
@@ -463,7 +444,7 @@ function Landing({ setScreen }: { setScreen: (s: Screen) => void }) {
               transition={{ delay: 0.18 }}
               className="landing-lede"
             >
-              StreetProof turns a phone video of your street into a mathematically defensible speed study—then makes every number easy for a city to verify.
+              StreetProof turns a phone video of your street into a speed study a city can check: every number is either proven or refused with a reason, and the record lives on the OriginTrail DKG.
             </motion.p>
             <div className="landing-actions">
               <MagneticButton
@@ -472,11 +453,11 @@ function Landing({ setScreen }: { setScreen: (s: Screen) => void }) {
               >
                 <CloudUpload size={15} /> Upload road footage <ArrowRight size={15} />
               </MagneticButton>
-              <button onClick={() => setScreen('results')} className="landing-secondary">
+              <button onClick={() => setScreen('overview')} className="landing-secondary">
                 <span className="grid h-7 w-7 place-items-center rounded-full border border-white/15">
                   <Play size={11} fill="currentColor" />
                 </span>{' '}
-                Inspect Cedar Ave audit
+                Inspect the real studies
               </button>
             </div>
             <div className="landing-proof-line">
@@ -488,49 +469,43 @@ function Landing({ setScreen }: { setScreen: (s: Screen) => void }) {
 
           <div className="landing-visual">
             <div className="visual-topline">
-              <span className="eyebrow text-[#82b1aa]">Live street telemetry</span>
-              <span className="mono text-[9px] text-[#789e9a]">fixed camera / frame 001</span>
+              <span className="eyebrow text-[#82b1aa]">{showcase ? 'Real study, annotated by StreetProof' : 'Street telemetry'}</span>
+              <span className="mono text-[9px] text-[#789e9a]">{showcase ? clipName(showcase.sourceName) : 'waiting for a study'}</span>
             </div>
             <div className="landing-video">
               <TelemetryCanvas />
-              <div className="road-plane" />
-              <div className="road-line road-line-one" />
-              <div className="road-line road-line-two" />
-              <div className="scan-beam" />
-              <div className="tracking-box tracking-good">
-                <span>
-                  CAR-14 <b>48.7 km/h</b>
-                </span>
-                <i>PROVEN ✓</i>
-              </div>
-              <div className="tracking-box tracking-bad">
-                <span>
-                  CAR-18 <b>—</b>
-                </span>
-                <i>REFUSED ⚠</i>
-              </div>
+              {showcase?.links.video ? (
+                <video src={showcase.links.video} className="absolute inset-0 h-full w-full object-cover" autoPlay muted loop playsInline />
+              ) : (
+                <>
+                  <div className="road-plane" />
+                  <div className="road-line road-line-one" />
+                  <div className="road-line road-line-two" />
+                  <div className="scan-beam" />
+                </>
+              )}
               <div className="visual-corner visual-corner-tl" />
               <div className="visual-corner visual-corner-br" />
               <div className="visual-bottom">
-                <span className="mono">30.00 FPS</span>
-                <span className="mono">8.00M SCALE</span>
-                <span className="mono">ID 0014 / 18 FRAMES</span>
+                <span className="mono">{showcase ? `${showcase.sampleFps} FPS SAMPLED` : 'NO STUDY YET'}</span>
+                <span className="mono">{showcase?.calibrationUal ? 'CALIBRATION FROM DKG' : showcase?.calibration ? showcase.calibration.mode.replace('_', ' ') : ''}</span>
+                <span className="mono">{showcase?.summary ? `${showcase.summary.vehiclesProven} PROVEN / ${showcase.summary.vehiclesObserved} TRACKED` : ''}</span>
               </div>
             </div>
             <div className="landing-hud">
               <div>
                 <span>Livepeer inference</span>
                 <strong>
-                  yolo-detect <b>·</b> $0.001
+                  yolo-detect <b>·</b> every frame
                 </strong>
               </div>
               <div>
                 <span>Proof state</span>
-                <strong className="text-[#9ce3d2]">2 tracked / 1 proven</strong>
+                <strong className="text-[#9ce3d2]">{showcase?.summary ? `${showcase.summary.vehiclesObserved} tracked / ${showcase.summary.vehiclesProven} proven` : '–'}</strong>
               </div>
               <div>
                 <span>Video hash</span>
-                <strong>8d4d...b17f21c</strong>
+                <strong>{showcase ? short(showcase.videoSha256, 4, 7) : '–'}</strong>
               </div>
             </div>
           </div>
@@ -556,7 +531,7 @@ function Landing({ setScreen }: { setScreen: (s: Screen) => void }) {
               <i />
               <span>Local math, public proof</span>
               <i />
-              <span>Privacy by default</span>
+              <span>Only fingerprints published</span>
               <i />
               <span>Built for the 85th percentile</span>
             </div>
@@ -577,7 +552,7 @@ function Landing({ setScreen }: { setScreen: (s: Screen) => void }) {
               </h2>
             </div>
             <p>
-              Most computer vision gives you a guess. StreetProof gives you a gate ledger. Every vehicle must clear six deterministic checks before its speed can enter the study.
+              Most computer vision gives you a guess. StreetProof gives you a gate ledger. Every vehicle must clear a fixed set of checks before its speed can enter the study, or it is refused with the reason.
             </p>
           </div>
           <div className="gate-grid">
@@ -627,10 +602,10 @@ function Landing({ setScreen }: { setScreen: (s: Screen) => void }) {
               <ArrowRight size={18} />
             </div>
             <div>
-              <span className="eyebrow text-[#55988d]">StreetProof gate gating</span>
+              <span className="eyebrow text-[#55988d]">StreetProof refusal gate</span>
               <h3>“This speed is defensible.”</h3>
               <p>
-                Known scale, locked timecode, bounded trajectory, consistent windows, and a public certificate.
+                Known scale, known time, a steady track, a stable box, and a record on the OriginTrail DKG that anyone with the video can check.
               </p>
               <span className="comparison-badge comparison-good">fact / inspectable</span>
             </div>
@@ -654,7 +629,7 @@ function Landing({ setScreen }: { setScreen: (s: Screen) => void }) {
           <div className="pipeline-track">
             {[
               ['01', 'Capture', 'Fixed camera footage', CloudUpload],
-              ['02', 'Calibrate', '4 points + 8 metres', Target],
+              ['02', 'Calibrate', 'known distance, or reuse one from the DKG', Target],
               ['03', 'Detect', 'Livepeer yolo-detect', Zap],
               ['04', 'Track', 'Local IoU matching', Layers3],
               ['05', 'Publish', 'DKG knowledge asset', Database],
@@ -684,7 +659,7 @@ function Landing({ setScreen }: { setScreen: (s: Screen) => void }) {
                 <em>outlive your browser tab.</em>
               </h2>
               <p>
-                StreetProof publishes the video hash, calibration points, thresholds, proven speeds, refusal reasons, and Livepeer capability used as a single verifiable Knowledge Asset.
+                StreetProof publishes the video's fingerprint, the calibration it used, the thresholds, every proven speed and refusal reason, and the Livepeer capability used, as a Knowledge Asset on the OriginTrail DKG.
               </p>
               <button
                 onClick={() => setScreen('verifier')}
@@ -701,18 +676,14 @@ function Landing({ setScreen }: { setScreen: (s: Screen) => void }) {
                 <span className="live-dot h-1.5 w-1.5 rounded-full bg-[#9ce3d2]" /> OriginTrail / knowledge asset
               </div>
               <div className="terminal-line terminal-key">UAL</div>
-              <div className="terminal-value">
-                did:example:streetproof:
-                <br />
-                sp-2409-021
-              </div>
+              <div className="terminal-value break-all">{showcase?.published ? short(showcase.published.ual, 34, 14) : 'publish a study to see its locator'}</div>
               <div className="terminal-line">SHA-256 / video</div>
-              <div className="terminal-value">8d4d4e7c9ac4...b17f21c</div>
+              <div className="terminal-value">{showcase?.published ? short(showcase.videoSha256, 12, 8) : '–'}</div>
               <div className="terminal-line">INTEGRITY CHECK</div>
               <div className="terminal-integrity">
-                <Check size={15} /> all fields unchanged
+                <Check size={15} /> one changed byte gives MISMATCH
               </div>
-              <div className="terminal-foot mono">public · queryable · tamper-evident</div>
+              <div className="terminal-foot mono">queryable · tamper-evident · V10 testnet</div>
             </div>
           </div>
         </section>
@@ -733,49 +704,43 @@ function Landing({ setScreen }: { setScreen: (s: Screen) => void }) {
           </div>
           <div className="impact-grid">
             <div className="impact-stat">
-              <div className="stat-number">
-                <CountUp value="142" />
-              </div>
+              <div className="stat-number">{detections != null ? <CountUp value={String(detections)} /> : '–'}</div>
+              <span>Livepeer detections</span>
+            </div>
+            <div className="impact-stat">
+              <div className="stat-number">{vehicles != null ? <CountUp value={String(vehicles)} /> : '–'}</div>
               <span>vehicles tracked</span>
             </div>
             <div className="impact-stat">
-              <div className="stat-number">
-                <CountUp value="93" />
-              </div>
-              <span>speeds proven</span>
+              <div className="stat-number">{validation && validation.clips > 0 ? `${validation.proven}/${validation.clips}` : '–'}</div>
+              <span>unseen clips proven</span>
             </div>
             <div className="impact-stat">
-              <div className="stat-number">
-                <CountUp value="34" suffix="%" />
-              </div>
-              <span>over 30 km/h</span>
-            </div>
-            <div className="impact-stat">
-              <div className="stat-number">
-                <CountUp value="3" />
-              </div>
-              <span>petitions supported</span>
+              <div className="stat-number">{validation?.meanAbsErrorPercent != null ? <CountUp value={String(validation?.meanAbsErrorPercent)} suffix="%" /> : '–'}</div>
+              <span>mean error, held-out clips</span>
             </div>
           </div>
 
           <div className="case-study">
             <div>
-              <div className="eyebrow">Featured audit / SP-2409-021</div>
-              <h3>Cedar Avenue</h3>
+              <div className="eyebrow">The accuracy test / VS13 benchmark</div>
+              <h3>Measured against known speeds</h3>
               <p>
-                “The street feels fast” became a 47.2 km/h 85th-percentile study, submitted to the Ward 4 Traffic Committee with every refusal documented.
+                {validation && validation.clips > 0
+                  ? `Calibrated on ${validation.calibrationClips.length} passes stored on the DKG, then measured ${validation.clips} clips it had never seen: ${validation.proven} proven, worst error ${validation.maxAbsErrorPercent}%.`
+                  : 'Run the accuracy test to see how close StreetProof gets to known speeds.'}
               </p>
             </div>
             <div className="case-metric">
-              <span className="display">47.2</span>
+              <span className="display">{validation?.meanAbsErrorPercent != null ? validation?.meanAbsErrorPercent.toFixed(1) : '–'}</span>
               <span>
-                km/h
+                %
                 <br />
-                85th percentile
+                mean error
               </span>
             </div>
             <button
-              onClick={() => setScreen('results')}
+              onClick={() => setScreen('accuracy')}
               className="grid h-11 w-11 place-items-center rounded-full border border-[#cbdad6] text-[#27766c] transition-transform hover:rotate-45"
             >
               <ArrowRight size={17} />
@@ -807,7 +772,7 @@ function Landing({ setScreen }: { setScreen: (s: Screen) => void }) {
             <span className="eyebrow">Disclosure</span>
             <span>Livepeer inference</span>
             <span>OriginTrail provenance</span>
-            <span>Zero faces or plates stored</span>
+            <span>Only fingerprints and results are published</span>
           </div>
         </div>
         <div className="footer-bottom mono">
@@ -820,28 +785,84 @@ function Landing({ setScreen }: { setScreen: (s: Screen) => void }) {
 }
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>('landing')
-  const [studies] = useState<Study[]>(initialStudies)
+  const [screen, setScreenState] = useState<Screen>(() => {
+    const hash = window.location.hash.replace('#', '') as Screen
+    return SCREENS.includes(hash) ? hash : 'landing'
+  })
+  const setScreen = (next: Screen) => {
+    setScreenState(next)
+    window.history.replaceState(null, '', next === 'landing' ? window.location.pathname : `#${next}`)
+    window.scrollTo(0, 0)
+  }
+  const [studyId, setStudyIdState] = useState<string | null>(() => {
+    const fromUrl = new URLSearchParams(window.location.search).get('study')
+    if (fromUrl) return fromUrl
+    try {
+      return window.sessionStorage.getItem('streetproof.study')
+    } catch {
+      return null
+    }
+  })
+  const [verifyUal, setVerifyUal] = useState<string | null>(null)
+  const setStudyId = useCallback((id: string | null) => {
+    setStudyIdState(id)
+    try {
+      if (id) window.sessionStorage.setItem('streetproof.study', id)
+    } catch {
+      return
+    }
+  }, [])
+  const openStudy = useCallback((id: string) => {
+    setStudyId(id)
+    setScreen('results')
+  }, [])
+  const onProcessingDone = useCallback((id: string) => {
+    setStudyId(id)
+    setScreen('results')
+  }, [])
 
   const content = useMemo(() => {
     switch (screen) {
       case 'overview':
-        return <OverviewScreen setScreen={setScreen} studies={studies} />
+        return <OverviewScreen setScreen={setScreen} openStudy={openStudy} />
       case 'new-study':
-        return <NewStudyScreen setScreen={setScreen} />
+        return (
+          <NewStudyScreen
+            onStarted={(id) => {
+              setStudyId(id)
+              setScreen('processing')
+            }}
+          />
+        )
       case 'processing':
-        return <ProcessingScreen setScreen={setScreen} />
+        return <ProcessingScreen studyId={studyId} onDone={onProcessingDone} onBack={() => setScreen('new-study')} />
       case 'results':
-        return <ResultsScreen setScreen={setScreen} />
+        return (
+          <ResultsScreen
+            studyId={studyId}
+            onVerify={(ual) => {
+              setVerifyUal(ual)
+              setScreen('verifier')
+            }}
+            onField={() => setScreen('field')}
+            onBack={() => setScreen('overview')}
+          />
+        )
       case 'verifier':
-        return <VerifierScreen setScreen={setScreen} />
+        return <VerifierScreen initialUal={verifyUal} />
+      case 'accuracy':
+        return <AccuracyScreen openStudy={openStudy} />
       default:
-        return <OverviewScreen setScreen={setScreen} studies={studies} />
+        return <OverviewScreen setScreen={setScreen} openStudy={openStudy} />
     }
-  }, [screen, studies])
+  }, [screen, studyId, verifyUal, openStudy, onProcessingDone, setStudyId])
 
   if (screen === 'landing') {
     return <Landing setScreen={setScreen} />
+  }
+
+  if (screen === 'field') {
+    return <FieldScreen onExit={() => setScreen('overview')} onOpenStudy={openStudy} />
   }
 
   return (

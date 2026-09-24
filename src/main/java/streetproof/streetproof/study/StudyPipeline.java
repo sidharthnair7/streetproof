@@ -161,7 +161,7 @@ public class StudyPipeline {
     }
 
     private static long waitMillis(LivepeerException e, int attempt) {
-        String message = e.getMessage() == null ? "" : e.getMessage();
+        String message = (e.getMessage() == null ? "" : e.getMessage()) + " " + (e.code() == null ? "" : e.code());
         if (message.contains("rate_limited") || message.contains("429")) {
             java.util.regex.Matcher seconds = java.util.regex.Pattern.compile("retry_after_seconds\\D+(\\d+)").matcher(message);
             return (seconds.find() ? Long.parseLong(seconds.group(1)) : 60L) * 1000L + 500L;
@@ -179,14 +179,18 @@ public class StudyPipeline {
             String url = livepeer.upload(Files.readAllBytes(frame), "image/jpeg", "conditions.jpg");
             study.livepeerCall(0);
             String answer = livepeer.askAboutImage(url,
-                    "Is this street scene too dark, too rainy or snowy, blocked, or full of glare to measure car speeds reliably? "
-                            + "Answer YES or NO first, then one short reason.");
+                    "Look at this street camera frame. Can you clearly see the road and any vehicles on it, with enough light "
+                            + "and without heavy rain, snow, fog, glare or anything blocking the view? "
+                            + "Answer YES or NO as the first word, then one short reason.");
             study.livepeerCall(0);
-            String trimmed = answer.strip();
-            study.conditionsNote("vision check: " + (trimmed.length() > 160 ? trimmed.substring(0, 160) : trimmed));
-            return trimmed.toUpperCase(Locale.ROOT).startsWith("YES") ? "vision check flagged the footage: " + trimmed : null;
+            String trimmed = answer.strip().replaceAll("\\s+", " ");
+            String reason = trimmed.length() > 180 ? trimmed.substring(0, 180) + "…" : trimmed;
+            String first = trimmed.replaceAll("^[^A-Za-z]+", "").toUpperCase(Locale.ROOT);
+            boolean refuse = first.startsWith("NO");
+            study.conditionsNote((refuse ? "Livepeer vision check refused the footage: " : "Livepeer vision check passed: ") + reason);
+            return refuse ? "vision check: " + reason : null;
         } catch (Exception e) {
-            study.conditionsNote("vision check unavailable: " + e.getMessage());
+            study.conditionsNote("Livepeer vision check unavailable, so it could not refuse anything: " + e.getMessage());
             return null;
         }
     }

@@ -30,7 +30,16 @@ public class FfmpegService {
     }
 
     public boolean available() {
-        return Files.isRegularFile(Path.of(ffmpeg));
+        try {
+            Process process = new ProcessBuilder(ffmpeg, "-version").redirectErrorStream(true).start();
+            process.getInputStream().readAllBytes();
+            return process.waitFor() == 0;
+        } catch (IOException e) {
+            return false;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
     }
 
     public VideoInfo probe(Path video) {
