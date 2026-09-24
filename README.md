@@ -2,7 +2,9 @@
 
 **A neighbourhood speed study you can check.** Film your street. StreetProof measures every car it can prove, refuses the ones it can't (and says why), and publishes the result to the OriginTrail Decentralized Knowledge Graph with the video's fingerprint, so a city, a neighbour or a journalist can check the numbers came from that exact video.
 
-**Livepeer Agent Hackathon, Track 2: Livepeer Agent + OriginTrail DKG.** Demo video: _link in the submission_.
+**Livepeer Agent Hackathon, Track 2: Livepeer Agent + OriginTrail DKG.** Demo video (3:53): https://youtu.be/bR04CYRyhNo
+
+[![Watch the StreetProof demo](docs/media/video-thumbnail.jpg)](https://youtu.be/bR04CYRyhNo)
 
 **How each sponsor is used, in code:**
 
